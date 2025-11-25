@@ -119,7 +119,7 @@ React 18.3.1
 3. `NodePanel.tsx` - 节点面板组件
 4. `DebugDrawer.tsx` - 调试抽屉组件 (240 行)
 5. `AudioPlayer.tsx` - 音频播放器组件
-6. `workflowStore.ts` - 工作流状态管理
+6. `workflowStore.ts` - 工作流状态管理 
 
 ## 🌟 技术亮点
 
