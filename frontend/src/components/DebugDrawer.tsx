@@ -196,7 +196,7 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
 
         {/* 结果展示区 */}
         {executionResult && executionResult.nodeResults.length > 0 && (
-          <div className="p-4 border-b border-gray-200 overflow-y-auto">
+          <div className="p-4 border-b border-gray-200">
             <Card title="节点执行结果" size="small">
               <Collapse
                 items={executionResult.nodeResults.map(renderNodeResultItem)}
@@ -227,7 +227,7 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
         )}
 
         {/* 日志区域 */}
-        <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+        <div className="p-4 bg-gray-50">
           <Card title="执行日志" size="small">
             <Timeline
               items={logs.map((log, index) => ({
