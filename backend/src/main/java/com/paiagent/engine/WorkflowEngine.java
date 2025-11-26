@@ -113,7 +113,13 @@ public class WorkflowEngine {
         // 保存执行记录
         ExecutionRecord record = new ExecutionRecord();
         record.setFlowId(workflow.getId());
-        record.setInputData(inputData);
+        // 将 inputData 包装成 JSON 对象
+        Map<String, Object> inputDataMap = new HashMap<>();
+        inputDataMap.put("input", inputData);
+        String inputDataJson = JSON.toJSONString(inputDataMap);
+        log.info("保存执行记录 - inputData: {}", inputDataJson);
+        log.info("保存执行记录 - outputData: {}", outputData);
+        record.setInputData(inputDataJson);
         record.setOutputData(outputData);
         record.setStatus(status);
         record.setNodeResults(JSON.toJSONString(nodeResults));

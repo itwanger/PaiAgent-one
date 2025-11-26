@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -12,6 +12,7 @@ import {
   OnNodesChange,
   OnEdgesChange,
   OnConnect,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useWorkflowStore } from '../store/workflowStore';
@@ -28,6 +29,25 @@ const FlowCanvas = ({ onNodeClick }: FlowCanvasProps) => {
   
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
+
+  // 当 store 中的 nodes/edges 变化时，同步更新到本地状态
+  useEffect(() => {
+    console.log('Store nodes changed:', storeNodes);
+    setNodes(storeNodes);
+  }, [storeNodes, setNodes]);
+
+  useEffect(() => {
+    console.log('Store edges changed:', storeEdges);
+    const edgesWithMarkers = storeEdges.map(edge => ({
+      ...edge,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+      },
+    }));
+    setEdges(edgesWithMarkers);
+  }, [storeEdges, setEdges]);
 
   // 同步到 store
   const handleNodesChange: OnNodesChange = useCallback((changes) => {
@@ -52,8 +72,18 @@ const FlowCanvas = ({ onNodeClick }: FlowCanvasProps) => {
   }, [onEdgesChange, setEdges, setStoreEdges]);
 
   const handleConnect: OnConnect = useCallback((connection: Connection) => {
+    console.log('Connection created:', connection);
     setEdges((eds) => {
-      const updatedEdges = addEdge(connection, eds);
+      const newEdge = {
+        ...connection,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 20,
+          height: 20,
+        },
+      };
+      console.log('New edge:', newEdge);
+      const updatedEdges = addEdge(newEdge, eds);
       setStoreEdges(updatedEdges);
       return updatedEdges;
     });
@@ -114,6 +144,13 @@ const FlowCanvas = ({ onNodeClick }: FlowCanvasProps) => {
         onDrop={onDrop}
         onDragOver={onDragOver}
         onNodeClick={handleNodeClick}
+        defaultEdgeOptions={{
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            width: 20,
+            height: 20,
+          },
+        }}
         fitView
       >
         <Background />

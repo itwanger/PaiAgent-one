@@ -16,11 +16,23 @@ interface WorkflowState {
   clear: () => void;
 }
 
-/**
- * 工作流编辑器状态管理
- */
+const defaultNodes: Node[] = [
+  {
+    id: 'input-default',
+    type: 'default',
+    position: { x: 250, y: 100 },
+    data: { label: '输入', type: 'input' },
+  },
+  {
+    id: 'output-default',
+    type: 'default',
+    position: { x: 250, y: 300 },
+    data: { label: '输出', type: 'output' },
+  },
+];
+
 export const useWorkflowStore = create<WorkflowState>((set) => ({
-  nodes: [],
+  nodes: defaultNodes,
   edges: [],
   selectedNode: null,
   currentWorkflowId: null,
@@ -49,7 +61,7 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   })),
   
   clear: () => set({
-    nodes: [],
+    nodes: defaultNodes,
     edges: [],
     selectedNode: null,
     currentWorkflowId: null

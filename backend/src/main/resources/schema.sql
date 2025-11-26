@@ -51,6 +51,16 @@ CREATE TABLE IF NOT EXISTS execution_record (
 
 -- 插入预置节点定义数据
 INSERT INTO node_definition (node_type, display_name, category, icon, input_schema, output_schema, config_schema) VALUES
+('input', '输入', 'IO', '📥',
+ '{"type": "object", "properties": {}}',
+ '{"type": "object", "properties": {"input": {"type": "string"}}}',
+ '{"type": "object", "properties": {"defaultValue": {"type": "string"}}}'),
+
+('output', '输出', 'IO', '📤',
+ '{"type": "object", "properties": {"input": {"type": "string"}}}',
+ '{"type": "object", "properties": {"output": {"type": "string"}}}',
+ '{"type": "object", "properties": {}}'),
+
 ('openai', 'OpenAI', 'LLM', '🤖', 
  '{"type": "object", "properties": {"input": {"type": "string"}}}',
  '{"type": "object", "properties": {"output": {"type": "string"}, "tokens": {"type": "number"}}}',

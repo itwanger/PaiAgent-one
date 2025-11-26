@@ -1,25 +1,39 @@
-import { useState } from 'react';
-import { Button, Input, Form, Card, message } from 'antd';
-import { SaveOutlined, FolderOpenOutlined, BugOutlined, LogoutOutlined } from '@ant-design/icons';
+import { useState, useEffect, useRef } from 'react';
+import { Button, Input, Form, Card, message, Checkbox, Select, Space, Modal, List } from 'antd';
+import { SaveOutlined, FolderOpenOutlined, BugOutlined, LogoutOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
 import NodePanel from '../components/NodePanel';
 import FlowCanvas from '../components/FlowCanvas';
 import DebugDrawer from '../components/DebugDrawer';
 import { useWorkflowStore } from '../store/workflowStore';
 import { useAuthStore } from '../store/authStore';
-import { createWorkflow, updateWorkflow, executeWorkflow } from '../api/workflow';
-import { useNavigate } from 'react-router-dom';
+import { createWorkflow, updateWorkflow, executeWorkflow, getWorkflows, getWorkflow, Workflow } from '../api/workflow';
+import { useNavigate, useParams } from 'react-router-dom';
+
+interface OutputParam {
+  name: string;
+  type: 'input' | 'reference';
+  value: string;
+  referenceNode?: string;
+}
 
 /**
  * 工作流编辑器页面
  */
 const EditorPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { username, clearAuth } = useAuthStore();
-  const { nodes, edges, currentWorkflowId, setCurrentWorkflowId, selectedNode } = useWorkflowStore();
+  const { nodes, edges, currentWorkflowId, setCurrentWorkflowId, selectedNode, setNodes, setEdges } = useWorkflowStore();
   const [workflowName, setWorkflowName] = useState('未命名工作流');
   const [saving, setSaving] = useState(false);
   const [debugDrawerOpen, setDebugDrawerOpen] = useState(false);
+  const [outputParams, setOutputParams] = useState<OutputParam[]>([]);
+  const [responseContent, setResponseContent] = useState('');
+  const [loadModalOpen, setLoadModalOpen] = useState(false);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [loadingWorkflows, setLoadingWorkflows] = useState(false);
+  const hasLoadedRef = useRef<number | null>(null);
 
   // 处理节点拖拽开始
   const handleDragStart = (event: React.DragEvent, nodeType: string, displayName: string) => {
@@ -31,7 +45,71 @@ const EditorPage = () => {
   // 处理节点点击
   const handleNodeClick = (node: Node) => {
     console.log('Node clicked:', node);
-    // TODO: 显示节点配置面板
+    useWorkflowStore.getState().setSelectedNode(node);
+  };
+
+  // 从 URL 加载工作流
+  useEffect(() => {
+    if (id) {
+      const workflowId = parseInt(id);
+      // 避免重复加载 - 使用 ref 标记
+      if (hasLoadedRef.current !== workflowId) {
+        hasLoadedRef.current = workflowId;
+        loadWorkflowById(workflowId);
+      }
+    }
+  }, [id]);
+
+  // 加载指定工作流
+  const loadWorkflowById = async (workflowId: number) => {
+    try {
+      const result = await getWorkflow(workflowId);
+      if (result.code === 200) {
+        const workflow = result.data;
+        setWorkflowName(workflow.name);
+        setCurrentWorkflowId(workflow.id);
+        
+        const flowData = JSON.parse(workflow.flowData);
+        console.log('加载的工作流数据:', flowData);
+        
+        // 加载节点
+        const loadedNodes = flowData.nodes || [];
+        setNodes(loadedNodes);
+        
+        // 加载连线并恢复箭头
+        const loadedEdges = (flowData.edges || []).map((edge: any) => ({
+          ...edge,
+          markerEnd: {
+            type: 'arrowclosed',
+            width: 20,
+            height: 20,
+          },
+        }));
+        setEdges(loadedEdges);
+        
+        // 恢复输出节点配置
+        const outputNode = loadedNodes.find((n: any) => n.data?.type === 'output');
+        console.log('找到输出节点:', outputNode);
+        console.log('输出节点配置 - outputParams:', outputNode?.data?.outputParams);
+        console.log('输出节点配置 - responseContent:', outputNode?.data?.responseContent);
+        
+        if (outputNode?.data?.outputParams) {
+          setOutputParams(outputNode.data.outputParams);
+        } else {
+          setOutputParams([]);
+        }
+        if (outputNode?.data?.responseContent) {
+          setResponseContent(outputNode.data.responseContent);
+        } else {
+          setResponseContent('');
+        }
+        
+        message.success('工作流加载成功');
+      }
+    } catch (error) {
+      message.error('工作流加载失败');
+      console.error(error);
+    }
   };
 
   // 保存工作流
@@ -74,7 +152,10 @@ const EditorPage = () => {
           flowData,
         });
         if (result.code === 200) {
-          setCurrentWorkflowId(result.data.id);
+          const workflowId = result.data.id;
+          setCurrentWorkflowId(workflowId);
+          // 更新 URL
+          navigate(`/editor/${workflowId}`, { replace: true });
           message.success('工作流创建成功');
         }
       }
@@ -114,6 +195,124 @@ const EditorPage = () => {
     navigate('/login');
   };
 
+  // 添加输出参数
+  const handleAddOutputParam = () => {
+    setOutputParams([...outputParams, { name: '', type: 'input', value: '' }]);
+  };
+
+  // 删除输出参数
+  const handleRemoveOutputParam = (index: number) => {
+    setOutputParams(outputParams.filter((_, i) => i !== index));
+  };
+
+  // 更新输出参数
+  const handleUpdateOutputParam = (index: number, field: keyof OutputParam, value: string) => {
+    const newParams = [...outputParams];
+    newParams[index] = { ...newParams[index], [field]: value };
+    setOutputParams(newParams);
+  };
+
+  // 获取可引用的节点列表（输出节点之前的所有节点）
+  const getReferenceableNodes = () => {
+    return nodes.filter(node => 
+      node.id !== selectedNode?.id && node.data?.type !== 'output'
+    );
+  };
+
+  // 获取节点的输出参数
+  const getNodeOutputParams = (nodeType: string): string[] => {
+    switch (nodeType) {
+      case 'input':
+        return ['user_input'];
+      case 'openai':
+      case 'deepseek':
+      case 'qwen':
+        return ['output', 'tokens'];
+      case 'tts':
+        return ['audioUrl', 'duration', 'fileSize'];
+      default:
+        return ['output'];
+    }
+  };
+
+  // 获取所有可引用的参数（节点.参数名格式）
+  const getReferenceableParams = () => {
+    const params: { label: string; value: string }[] = [];
+    getReferenceableNodes().forEach(node => {
+      const nodeType = node.data?.type || '';
+      const nodeLabel = node.data?.label || node.id;
+      const outputParams = getNodeOutputParams(nodeType);
+      
+      outputParams.forEach(param => {
+        params.push({
+          label: `${nodeLabel}.${param}`,
+          value: `${node.id}.${param}`
+        });
+      });
+    });
+    return params;
+  };
+
+  // 保存输出节点配置
+  const handleSaveOutputConfig = () => {
+    if (!selectedNode) return;
+
+    // 验证参数配置
+    for (const param of outputParams) {
+      if (!param.name) {
+        message.warning('请填写所有参数名');
+        return;
+      }
+      if (param.type === 'input' && !param.value) {
+        message.warning('请填写输入值');
+        return;
+      }
+      if (param.type === 'reference' && !param.referenceNode) {
+        message.warning('请选择引用参数');
+        return;
+      }
+    }
+
+    // 保存到节点的 data 中
+    const updatedData = {
+      ...selectedNode.data,
+      outputParams,
+      responseContent
+    };
+
+    console.log('保存输出节点配置:', {
+      nodeId: selectedNode.id,
+      outputParams,
+      responseContent,
+      updatedData
+    });
+
+    useWorkflowStore.getState().updateNode(selectedNode.id, updatedData);
+    message.success('配置保存成功');
+  };
+
+  // 打开加载工作流对话框
+  const handleOpenLoadModal = async () => {
+    setLoadingWorkflows(true);
+    setLoadModalOpen(true);
+    try {
+      const result = await getWorkflows();
+      if (result.code === 200) {
+        setWorkflows(result.data);
+      }
+    } catch (error) {
+      message.error('获取工作流列表失败');
+    } finally {
+      setLoadingWorkflows(false);
+    }
+  };
+
+  // 加载选中的工作流
+  const handleLoadWorkflow = (workflow: Workflow) => {
+    setLoadModalOpen(false);
+    navigate(`/editor/${workflow.id}`);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       {/* 顶部工具栏 */}
@@ -131,7 +330,7 @@ const EditorPage = () => {
         <div className="flex items-center gap-3">
           <Button
             icon={<FolderOpenOutlined />}
-            onClick={() => message.info('加载功能开发中')}
+            onClick={handleOpenLoadModal}
           >
             加载
           </Button>
@@ -180,19 +379,137 @@ const EditorPage = () => {
           <Card title="节点配置" className="m-4">
             {selectedNode ? (
               <div>
-                <p className="text-gray-600">节点 ID: {selectedNode.id}</p>
-                <p className="text-gray-600">节点类型: {String(selectedNode.data?.type || '')}</p>
-                <Form className="mt-4">
-                  <Form.Item label="提示词">
-                    <Input.TextArea rows={4} placeholder="输入提示词..." />
-                  </Form.Item>
-                  <Form.Item label="温度">
-                    <Input type="number" step="0.1" defaultValue="0.7" />
-                  </Form.Item>
-                  <Button type="primary" block>
-                    保存配置
-                  </Button>
-                </Form>
+                <p className="text-gray-600 mb-2">节点 ID: {selectedNode.id}</p>
+                <p className="text-gray-600 mb-4">节点类型: {String(selectedNode.data?.type || '')}</p>
+                
+                {/* 输入节点配置 */}
+                {selectedNode.data?.type === 'input' && (
+                  <Form layout="vertical" className="mt-4">
+                    <Form.Item label="变量名">
+                      <Input value="user_input" disabled />
+                    </Form.Item>
+                    <Form.Item label="变量类型">
+                      <Input value="String" disabled />
+                    </Form.Item>
+                    <Form.Item label="描述">
+                      <Input.TextArea value="用户本轮的输入内容" disabled rows={2} />
+                    </Form.Item>
+                    <Form.Item label="是否必要">
+                      <Checkbox checked disabled>必要</Checkbox>
+                    </Form.Item>
+                  </Form>
+                )}
+
+                {/* 输出节点配置 */}
+                {selectedNode.data?.type === 'output' && (
+                  <Form layout="vertical" className="mt-4">
+                    {/* 输出配置 */}
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="font-medium text-gray-700">输出配置</label>
+                        <Button 
+                          type="dashed" 
+                          size="small" 
+                          icon={<PlusOutlined />}
+                          onClick={handleAddOutputParam}
+                        >
+                          添加
+                        </Button>
+                      </div>
+                      
+                      {outputParams.map((param, index) => (
+                        <Space key={index} className="w-full mb-3" align="start">
+                          <div className="flex-1">
+                            <Input 
+                              placeholder="参数名"
+                              value={param.name}
+                              onChange={(e) => handleUpdateOutputParam(index, 'name', e.target.value)}
+                              style={{ width: '100px' }}
+                            />
+                          </div>
+                          <div>
+                            <Select
+                              value={param.type}
+                              onChange={(value) => handleUpdateOutputParam(index, 'type', value)}
+                              style={{ width: '80px' }}
+                            >
+                              <Select.Option value="input">输入</Select.Option>
+                              <Select.Option value="reference">引用</Select.Option>
+                            </Select>
+                          </div>
+                          <div className="flex-1">
+                            {param.type === 'input' ? (
+                              <Input 
+                                placeholder="输入值"
+                                value={param.value}
+                                onChange={(e) => handleUpdateOutputParam(index, 'value', e.target.value)}
+                                style={{ width: '120px' }}
+                              />
+                            ) : (
+                              <Select
+                                placeholder="选择参数"
+                                value={param.referenceNode}
+                                onChange={(value) => handleUpdateOutputParam(index, 'referenceNode', value)}
+                                style={{ width: '120px' }}
+                              >
+                                {getReferenceableParams().map(param => (
+                                  <Select.Option key={param.value} value={param.value}>
+                                    {param.label}
+                                  </Select.Option>
+                                ))}
+                              </Select>
+                            )}
+                          </div>
+                          <Button 
+                            type="text" 
+                            danger 
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleRemoveOutputParam(index)}
+                          />
+                        </Space>
+                      ))}
+                      
+                      {outputParams.length === 0 && (
+                        <div className="text-gray-400 text-center py-4 border border-dashed border-gray-300 rounded">
+                          点击"添加"按钮添加输出参数
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 回答内容配置 */}
+                    <Form.Item label="回答内容配置">
+                      <Input.TextArea 
+                        rows={6}
+                        placeholder="使用 {{参数名}} 引用输出配置中的参数"
+                        value={responseContent}
+                        onChange={(e) => setResponseContent(e.target.value)}
+                      />
+                      <div className="mt-2 text-xs text-gray-500">
+                        💡 提示: 使用 {'{{'} 参数名 {'}'} 引用上面定义的参数
+                      </div>
+                    </Form.Item>
+
+                    <Button type="primary" block onClick={handleSaveOutputConfig}>
+                      保存配置
+                    </Button>
+                  </Form>
+                )}
+
+                {/* 其他节点配置 */}
+                {selectedNode.data?.type !== 'input' && selectedNode.data?.type !== 'output' && (
+                  <Form layout="vertical" className="mt-4">
+                    <Form.Item label="提示词">
+                      <Input.TextArea rows={4} placeholder="输入提示词..." />
+                    </Form.Item>
+                    <Form.Item label="温度">
+                      <Input type="number" step="0.1" defaultValue="0.7" />
+                    </Form.Item>
+                    <Button type="primary" block>
+                      保存配置
+                    </Button>
+                  </Form>
+                )}
               </div>
             ) : (
               <p className="text-gray-400 text-center py-8">请选择一个节点</p>
@@ -207,6 +524,35 @@ const EditorPage = () => {
         onClose={() => setDebugDrawerOpen(false)}
         onExecute={handleExecute}
       />
+
+      {/* 加载工作流对话框 */}
+      <Modal
+        title="加载工作流"
+        open={loadModalOpen}
+        onCancel={() => setLoadModalOpen(false)}
+        footer={null}
+        width={600}
+      >
+        <List
+          loading={loadingWorkflows}
+          dataSource={workflows}
+          renderItem={(workflow) => (
+            <List.Item
+              key={workflow.id}
+              actions={[
+                <Button type="link" onClick={() => handleLoadWorkflow(workflow)}>
+                  加载
+                </Button>
+              ]}
+            >
+              <List.Item.Meta
+                title={workflow.name}
+                description={`创建于: ${new Date(workflow.createdAt).toLocaleString()}`}
+              />
+            </List.Item>
+          )}
+        />
+      </Modal>
     </div>
   );
 };

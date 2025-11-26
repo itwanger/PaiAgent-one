@@ -10,8 +10,10 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<EditorPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/editor" element={<EditorPage />} />
+          <Route path="/editor/:id" element={<EditorPage />} />
+          <Route path="/" element={<Navigate to="/editor" replace />} />
+          <Route path="*" element={<Navigate to="/editor" replace />} />
         </Routes>
       </BrowserRouter>
     </ConfigProvider>
