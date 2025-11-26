@@ -332,16 +332,18 @@ const EditorPage = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* 顶部工具栏 */}
-      <div className="bg-white shadow-sm px-4 py-3 flex items-center justify-between border-b border-gray-200">
+      <div className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-gray-800">PaiAgent</h1>
+          <h1 className="text-2xl font-bold text-gray-800">PaiAgent</h1>
           <Input
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
             className="w-64"
             placeholder="工作流名称"
+            bordered={false}
+            style={{ borderBottom: '2px solid #e5e7eb' }}
           />
         </div>
         
@@ -349,6 +351,7 @@ const EditorPage = () => {
           <Button
             icon={<FolderOpenOutlined />}
             onClick={handleOpenLoadModal}
+            size="large"
           >
             加载
           </Button>
@@ -357,6 +360,7 @@ const EditorPage = () => {
             icon={<SaveOutlined />}
             onClick={handleSave}
             loading={saving}
+            size="large"
           >
             保存
           </Button>
@@ -365,14 +369,16 @@ const EditorPage = () => {
             icon={<BugOutlined />}
             onClick={handleOpenDebug}
             disabled={!currentWorkflowId}
+            size="large"
           >
             调试
           </Button>
-          <div className="ml-4 flex items-center gap-2">
+          <div className="ml-4 flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-lg">
             <span className="text-gray-600">👤 {username}</span>
             <Button
               icon={<LogoutOutlined />}
               onClick={handleLogout}
+              type="text"
             >
               登出
             </Button>
@@ -381,24 +387,30 @@ const EditorPage = () => {
       </div>
 
       {/* 主要内容区域 */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden gap-4 p-4">
         {/* 左侧节点面板 */}
-        <div className="w-64 flex-shrink-0">
+        <div className="w-64 flex-shrink-0 bg-white rounded-lg shadow-sm overflow-hidden">
           <NodePanel onDragStart={handleDragStart} />
         </div>
 
         {/* 中间画布 */}
-        <div className="flex-1">
+        <div className="flex-1 bg-white rounded-lg shadow-sm overflow-hidden">
           <FlowCanvas onNodeClick={handleNodeClick} />
         </div>
 
         {/* 右侧配置面板 */}
-        <div className="w-80 flex-shrink-0 bg-white border-l border-gray-200 overflow-y-auto">
-          <Card title="节点配置" className="m-4">
-            {selectedNode ? (
-              <div>
-                <p className="text-gray-600 mb-2">节点 ID: {selectedNode.id}</p>
-                <p className="text-gray-600 mb-4">节点类型: {String(selectedNode.data?.type || '')}</p>
+        <div className="w-80 flex-shrink-0 bg-white rounded-lg shadow-sm overflow-y-auto p-4">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800">节点配置</h3>
+          {selectedNode ? (
+            <div>
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1">节点 ID</p>
+                <p className="text-gray-700 font-medium">{selectedNode.id}</p>
+              </div>
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1">节点类型</p>
+                <p className="text-gray-700 font-medium">{String(selectedNode.data?.type || '')}</p>
+              </div>
                 
                 {/* 输入节点配置 */}
                 {selectedNode.data?.type === 'input' && (
@@ -530,9 +542,10 @@ const EditorPage = () => {
                 )}
               </div>
             ) : (
-              <p className="text-gray-400 text-center py-8">请选择一个节点</p>
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-sm">请选择一个节点</p>
+              </div>
             )}
-          </Card>
         </div>
       </div>
 

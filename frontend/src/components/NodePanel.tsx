@@ -81,22 +81,27 @@ const NodePanel = ({ onDragStart }: NodePanelProps) => {
   ];
 
   return (
-    <div className="h-full bg-gray-50 border-r border-gray-200 overflow-y-auto">
-      <Card
-        title={<span className="font-bold">节点库</span>}
-        bordered={false}
-        loading={loading}
-        className="h-full"
-      >
-        <Collapse
-          defaultActiveKey={['llm', 'tool']}
-          ghost
-          items={items}
-        />
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-gray-600">
-          💡 提示: 拖拽节点到画布中使用
-        </div>
-      </Card>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-gray-100">
+        <h3 className="font-bold text-gray-800">节点库</h3>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        {loading ? (
+          <div className="text-center py-8 text-gray-400">加载中...</div>
+        ) : (
+          <>
+            <Collapse
+              defaultActiveKey={['llm', 'tool']}
+              ghost
+              items={items}
+              bordered={false}
+            />
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-gray-600">
+              💡 拖拽节点到画布中使用
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };
