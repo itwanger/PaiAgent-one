@@ -273,6 +273,24 @@ const EditorPage = () => {
       }
     }
 
+    // 验证回答内容配置中的参数引用
+    const paramNames = new Set(outputParams.map(p => p.name));
+    const templateParamRegex = /\{\{(\w+)\}\}/g;
+    const matches = responseContent.matchAll(templateParamRegex);
+    const undefinedParams: string[] = [];
+    
+    for (const match of matches) {
+      const paramName = match[1];
+      if (!paramNames.has(paramName)) {
+        undefinedParams.push(paramName);
+      }
+    }
+    
+    if (undefinedParams.length > 0) {
+      message.warning(`回答内容中引用了未定义的参数: ${undefinedParams.join(', ')}`);
+      return;
+    }
+
     // 保存到节点的 data 中
     const updatedData = {
       ...selectedNode.data,
