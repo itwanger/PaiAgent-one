@@ -17,6 +17,19 @@ interface OutputParam {
   referenceNode?: string;
 }
 
+interface LlmInputParam {
+  name: string;
+  type: 'input' | 'reference';
+  value: string;
+  referenceNode?: string;
+}
+
+interface LlmOutputParam {
+  name: string;
+  type: string;
+  description?: string;
+}
+
 /**
  * 工作流编辑器页面
  */
@@ -34,6 +47,17 @@ const EditorPage = () => {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loadingWorkflows, setLoadingWorkflows] = useState(false);
   const hasLoadedRef = useRef<number | null>(null);
+  
+  // LLM 节点配置状态
+  const [llmConfig, setLlmConfig] = useState({
+    apiUrl: '',
+    apiKey: '',
+    model: '',
+    temperature: 0.7,
+    prompt: ''
+  });
+  const [llmInputParams, setLlmInputParams] = useState<LlmInputParam[]>([]);
+  const [llmOutputParams, setLlmOutputParams] = useState<LlmOutputParam[]>([]);
 
   // 处理节点拖拽开始
   const handleDragStart = (event: React.DragEvent, nodeType: string, displayName: string) => {
@@ -46,6 +70,23 @@ const EditorPage = () => {
   const handleNodeClick = (node: Node) => {
     console.log('Node clicked:', node);
     useWorkflowStore.getState().setSelectedNode(node);
+    
+    // 加载节点配置
+    if (node.data?.type === 'output') {
+      setOutputParams(node.data?.outputParams || []);
+      setResponseContent(node.data?.responseContent || '');
+    } else if (node.data?.type === 'openai' || node.data?.type === 'deepseek' || node.data?.type === 'qwen') {
+      // 加载 LLM 节点配置
+      setLlmConfig({
+        apiUrl: node.data?.apiUrl || '',
+        apiKey: node.data?.apiKey || '',
+        model: node.data?.model || '',
+        temperature: node.data?.temperature || 0.7,
+        prompt: node.data?.prompt || ''
+      });
+      setLlmInputParams(node.data?.inputParams || []);
+      setLlmOutputParams(node.data?.outputParams || []);
+    }
   };
 
   // 从 URL 加载工作流
@@ -331,6 +372,113 @@ const EditorPage = () => {
     navigate(`/editor/${workflow.id}`);
   };
 
+  // 保存 LLM 节点配置
+  const handleSaveLlmConfig = () => {
+    if (!selectedNode) return;
+
+    // 验证输入参数
+    for (const param of llmInputParams) {
+      if (!param.name) {
+        message.warning('请填写所有参数名');
+        return;
+      }
+      if (param.type === 'input' && !param.value) {
+        message.warning('请填写输入值');
+        return;
+      }
+      if (param.type === 'reference' && !param.referenceNode) {
+        message.warning('请选择引用参数');
+        return;
+      }
+    }
+
+    // 验证提示词
+    if (!llmConfig.prompt) {
+      message.warning('请填写提示词模板');
+      return;
+    }
+
+    // 验证提示词中的参数引用
+    const paramNames = new Set(llmInputParams.map(p => p.name));
+    const templateParamRegex = /\{\{(\w+)\}\}/g;
+    const matches = llmConfig.prompt.matchAll(templateParamRegex);
+    const undefinedParams: string[] = [];
+    
+    for (const match of matches) {
+      const paramName = match[1];
+      if (!paramNames.has(paramName)) {
+        undefinedParams.push(paramName);
+      }
+    }
+    
+    if (undefinedParams.length > 0) {
+      message.warning(`提示词模板中引用了未定义的参数: ${undefinedParams.join(', ')}`);
+      return;
+    }
+
+    // 验证 API 配置
+    if (!llmConfig.apiUrl) {
+      message.warning('请填写 API 地址');
+      return;
+    }
+    if (!llmConfig.apiKey) {
+      message.warning('请填写 API 密钥');
+      return;
+    }
+    if (!llmConfig.model) {
+      message.warning('请填写模型名称');
+      return;
+    }
+
+    const updatedData = {
+      ...selectedNode.data,
+      apiUrl: llmConfig.apiUrl,
+      apiKey: llmConfig.apiKey,
+      model: llmConfig.model,
+      temperature: llmConfig.temperature,
+      prompt: llmConfig.prompt,
+      inputParams: llmInputParams,
+      outputParams: llmOutputParams
+    };
+
+    useWorkflowStore.getState().updateNode(selectedNode.id, updatedData);
+    message.success('配置保存成功');
+  };
+
+  // 添加 LLM 输入参数
+  const handleAddLlmInputParam = () => {
+    setLlmInputParams([...llmInputParams, { name: '', type: 'input', value: '' }]);
+  };
+
+  // 删除 LLM 输入参数
+  const handleRemoveLlmInputParam = (index: number) => {
+    setLlmInputParams(llmInputParams.filter((_, i) => i !== index));
+  };
+
+  // 更新 LLM 输入参数
+  const handleUpdateLlmInputParam = (index: number, field: keyof LlmInputParam, value: string) => {
+    const newParams = [...llmInputParams];
+    newParams[index] = { ...newParams[index], [field]: value };
+    setLlmInputParams(newParams);
+  };
+
+  // 添加 LLM 输出参数
+  const handleAddLlmOutputParam = () => {
+    setLlmOutputParams([...llmOutputParams, { name: '', type: 'string', description: '' }]);
+  };
+
+  // 删除 LLM 输出参数
+  const handleRemoveLlmOutputParam = (index: number) => {
+    setLlmOutputParams(llmOutputParams.filter((_, i) => i !== index));
+  };
+
+  // 更新 LLM 输出参数
+  const handleUpdateLlmOutputParam = (index: number, field: keyof LlmOutputParam, value: string) => {
+    const newParams = [...llmOutputParams];
+    newParams[index] = { ...newParams[index], [field]: value };
+    setLlmOutputParams(newParams);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* 顶部工具栏 */}
@@ -399,7 +547,7 @@ const EditorPage = () => {
         </div>
 
         {/* 右侧配置面板 */}
-        <div className="w-80 flex-shrink-0 bg-white rounded-lg shadow-sm overflow-y-auto p-4">
+        <div className="w-[420px] flex-shrink-0 bg-white rounded-lg shadow-sm overflow-y-auto p-4">
           <h3 className="text-lg font-semibold mb-4 text-gray-800">节点配置</h3>
           {selectedNode ? (
             <div>
@@ -449,7 +597,7 @@ const EditorPage = () => {
                       
                       {outputParams.map((param, index) => (
                         <Space key={index} className="w-full mb-3" align="start">
-                          <div className="flex-1">
+                          <div>
                             <Input 
                               placeholder="参数名"
                               value={param.name}
@@ -473,14 +621,13 @@ const EditorPage = () => {
                                 placeholder="输入值"
                                 value={param.value}
                                 onChange={(e) => handleUpdateOutputParam(index, 'value', e.target.value)}
-                                style={{ width: '120px' }}
                               />
                             ) : (
                               <Select
                                 placeholder="选择参数"
                                 value={param.referenceNode}
                                 onChange={(value) => handleUpdateOutputParam(index, 'referenceNode', value)}
-                                style={{ width: '120px' }}
+                                className="w-full"
                               >
                                 {getReferenceableParams().map(param => (
                                   <Select.Option key={param.value} value={param.value}>
@@ -526,8 +673,187 @@ const EditorPage = () => {
                   </Form>
                 )}
 
-                {/* 其他节点配置 */}
-                {selectedNode.data?.type !== 'input' && selectedNode.data?.type !== 'output' && (
+                {/* LLM 节点配置 (OpenAI/DeepSeek/Qwen) */}
+                {(selectedNode.data?.type === 'openai' || selectedNode.data?.type === 'deepseek' || selectedNode.data?.type === 'qwen') && (
+                  <Form layout="vertical" className="mt-4">
+                    {/* 输入参数配置 */}
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="font-medium text-gray-700">输入参数</label>
+                        <Button 
+                          type="dashed" 
+                          size="small" 
+                          icon={<PlusOutlined />}
+                          onClick={handleAddLlmInputParam}
+                        >
+                          添加
+                        </Button>
+                      </div>
+                      
+                      {llmInputParams.map((param, index) => (
+                        <div key={index} className="flex items-start gap-2 mb-3">
+                          <Input 
+                            placeholder="参数名"
+                            value={param.name}
+                            onChange={(e) => handleUpdateLlmInputParam(index, 'name', e.target.value)}
+                            style={{ width: '90px' }}
+                          />
+                          <Select
+                            value={param.type}
+                            onChange={(value) => handleUpdateLlmInputParam(index, 'type', value)}
+                            style={{ width: '70px' }}
+                          >
+                            <Select.Option value="input">输入</Select.Option>
+                            <Select.Option value="reference">引用</Select.Option>
+                          </Select>
+                          <div className="flex-1">
+                            {param.type === 'input' ? (
+                              <Input 
+                                placeholder="输入值"
+                                value={param.value}
+                                onChange={(e) => handleUpdateLlmInputParam(index, 'value', e.target.value)}
+                              />
+                            ) : (
+                              <Select
+                                placeholder="选择参数"
+                                value={param.referenceNode}
+                                onChange={(value) => handleUpdateLlmInputParam(index, 'referenceNode', value)}
+                                className="w-full"
+                              >
+                                {getReferenceableParams().map(p => (
+                                  <Select.Option key={p.value} value={p.value}>
+                                    {p.label}
+                                  </Select.Option>
+                                ))}
+                              </Select>
+                            )}
+                          </div>
+                          <Button 
+                            type="text" 
+                            danger 
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleRemoveLlmInputParam(index)}
+                          />
+                        </div>
+                      ))}
+                      
+                      {llmInputParams.length === 0 && (
+                        <div className="text-gray-400 text-center py-4 border border-dashed border-gray-300 rounded">
+                          点击"添加"按钮添加输入参数
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 输出参数配置 */}
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="font-medium text-gray-700">输出参数</label>
+                        <Button 
+                          type="dashed" 
+                          size="small" 
+                          icon={<PlusOutlined />}
+                          onClick={handleAddLlmOutputParam}
+                        >
+                          添加
+                        </Button>
+                      </div>
+                      
+                      {llmOutputParams.map((param, index) => (
+                        <div key={index} className="flex items-start gap-2 mb-3">
+                          <Input 
+                            placeholder="变量名"
+                            value={param.name}
+                            onChange={(e) => handleUpdateLlmOutputParam(index, 'name', e.target.value)}
+                            style={{ width: '100px' }}
+                          />
+                          <Input
+                            value="string"
+                            disabled
+                            style={{ width: '70px' }}
+                          />
+                          <div className="flex-1">
+                            <Input 
+                              placeholder="描述（可选）"
+                              value={param.description}
+                              onChange={(e) => handleUpdateLlmOutputParam(index, 'description', e.target.value)}
+                            />
+                          </div>
+                          <Button 
+                            type="text" 
+                            danger 
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleRemoveLlmOutputParam(index)}
+                          />
+                        </div>
+                      ))}
+                      
+                      {llmOutputParams.length === 0 && (
+                        <div className="text-gray-400 text-center py-4 border border-dashed border-gray-300 rounded">
+                          点击"添加"按钮添加输出参数
+                        </div>
+                      )}
+                    </div>
+
+                    <Form.Item label="提示词模板" required>
+                      <Input.TextArea 
+                        rows={12} 
+                        placeholder="输入提示词模板，使用 {{参数名}} 引用输入参数"
+                        value={llmConfig.prompt}
+                        onChange={(e) => setLlmConfig({...llmConfig, prompt: e.target.value})}
+                        style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        💡 使用 {'{{'} 参数名 {'}'} 引用上面定义的输入参数
+                      </div>
+                    </Form.Item>
+                    <Form.Item label="API 地址" required>
+                      <Input 
+                        placeholder="例如: https://api.deepseek.com"
+                        value={llmConfig.apiUrl}
+                        onChange={(e) => setLlmConfig({...llmConfig, apiUrl: e.target.value})}
+                      />
+                    </Form.Item>
+                    <Form.Item label="API 密钥" required>
+                      <Input.Password 
+                        placeholder="输入 API Key"
+                        value={llmConfig.apiKey}
+                        onChange={(e) => setLlmConfig({...llmConfig, apiKey: e.target.value})}
+                      />
+                    </Form.Item>
+                    <Form.Item label="模型名称" required>
+                      <Input 
+                        placeholder="例如: deepseek-chat"
+                        value={llmConfig.model}
+                        onChange={(e) => setLlmConfig({...llmConfig, model: e.target.value})}
+                      />
+                    </Form.Item>
+                    <Form.Item label="温度">
+                      <Input 
+                        type="number" 
+                        step="0.1" 
+                        min="0" 
+                        max="2"
+                        value={llmConfig.temperature}
+                        onChange={(e) => setLlmConfig({...llmConfig, temperature: parseFloat(e.target.value) || 0.7})}
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        控制输出随机性，范围 0-2，值越高越随机
+                      </div>
+                    </Form.Item>
+                    <Button type="primary" block onClick={handleSaveLlmConfig}>
+                      保存配置
+                    </Button>
+                  </Form>
+                )}
+
+                {/* 其他节点配置 (TTS 等工具节点) */}
+                {selectedNode.data?.type !== 'input' && 
+                 selectedNode.data?.type !== 'output' && 
+                 selectedNode.data?.type !== 'openai' && 
+                 selectedNode.data?.type !== 'deepseek' && 
+                 selectedNode.data?.type !== 'qwen' && (
                   <Form layout="vertical" className="mt-4">
                     <Form.Item label="提示词">
                       <Input.TextArea rows={4} placeholder="输入提示词..." />
