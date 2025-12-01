@@ -79,4 +79,9 @@ INSERT INTO node_definition (node_type, display_name, category, icon, input_sche
 ('tts', '超拟人音频合成', 'TOOL', '🔊',
  '{"type": "object", "properties": {"text": {"type": "string"}}}',
  '{"type": "object", "properties": {"audioUrl": {"type": "string"}, "duration": {"type": "number"}, "fileSize": {"type": "number"}}}',
- '{"type": "object", "properties": {"apiKey": {"type": "string"}, "voice": {"type": "string", "default": "female"}, "speed": {"type": "number", "default": 1.0}, "volume": {"type": "number", "default": 80}}}');
+ '{"type": "object", "properties": {"apiKey": {"type": "string"}, "voice": {"type": "string", "default": "female"}, "speed": {"type": "number", "default": 1.0}, "volume": {"type": "number", "default": 80}}}'),
+
+('ai_ping', 'AI Ping', 'LLM', '🏓',
+ '{"type": "object", "properties": {"input": {"type": "string"}}}',
+ '{"type": "object", "properties": {"output": {"type": "string"}, "tokens": {"type": "number"}}}',
+ '{"type": "object", "properties": {"apiUrl": {"type": "string", "default": "https://api.aiping.com/v1"}, "apiKey": {"type": "string"}, "model": {"type": "string", "default": "ai-ping-v1"}, "prompt": {"type": "string"}, "temperature": {"type": "number", "default": 0.7}, "maxTokens": {"type": "number", "default": 1000}}}');

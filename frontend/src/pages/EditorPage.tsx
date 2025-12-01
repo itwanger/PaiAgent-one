@@ -75,8 +75,8 @@ const EditorPage = () => {
     if (node.data?.type === 'output') {
       setOutputParams(node.data?.outputParams || []);
       setResponseContent(node.data?.responseContent || '');
-    } else if (node.data?.type === 'openai' || node.data?.type === 'deepseek' || node.data?.type === 'qwen') {
-      // 加载 LLM 节点配置
+    } else if (node.data?.type === 'openai' || node.data?.type === 'deepseek' || node.data?.type === 'qwen' || node.data?.type === 'ai_ping') {
+      // 加载 LLM 节点配置 (包括 AI Ping)
       setLlmConfig({
         apiUrl: node.data?.apiUrl || '',
         apiKey: node.data?.apiKey || '',
@@ -268,6 +268,7 @@ const EditorPage = () => {
       case 'openai':
       case 'deepseek':
       case 'qwen':
+      case 'ai_ping':
         return ['output', 'tokens'];
       case 'tts':
         return ['audioUrl', 'duration', 'fileSize'];
@@ -673,16 +674,16 @@ const EditorPage = () => {
                   </Form>
                 )}
 
-                {/* LLM 节点配置 (OpenAI/DeepSeek/Qwen) */}
-                {(selectedNode.data?.type === 'openai' || selectedNode.data?.type === 'deepseek' || selectedNode.data?.type === 'qwen') && (
+                {/* LLM 节点配置 (OpenAI/DeepSeek/Qwen/AI Ping) */}
+                {(selectedNode.data?.type === 'openai' || selectedNode.data?.type === 'deepseek' || selectedNode.data?.type === 'qwen' || selectedNode.data?.type === 'ai_ping') && (
                   <Form layout="vertical" className="mt-4">
                     {/* 输入参数配置 */}
                     <div className="mb-6">
                       <div className="flex justify-between items-center mb-3">
                         <label className="font-medium text-gray-700">输入参数</label>
-                        <Button 
-                          type="dashed" 
-                          size="small" 
+                        <Button
+                          type="dashed"
+                          size="small"
                           icon={<PlusOutlined />}
                           onClick={handleAddLlmInputParam}
                         >
@@ -849,11 +850,12 @@ const EditorPage = () => {
                 )}
 
                 {/* 其他节点配置 (TTS 等工具节点) */}
-                {selectedNode.data?.type !== 'input' && 
-                 selectedNode.data?.type !== 'output' && 
-                 selectedNode.data?.type !== 'openai' && 
-                 selectedNode.data?.type !== 'deepseek' && 
-                 selectedNode.data?.type !== 'qwen' && (
+                {selectedNode.data?.type !== 'input' &&
+                 selectedNode.data?.type !== 'output' &&
+                 selectedNode.data?.type !== 'openai' &&
+                 selectedNode.data?.type !== 'deepseek' &&
+                 selectedNode.data?.type !== 'qwen' &&
+                 selectedNode.data?.type !== 'ai_ping' && (
                   <Form layout="vertical" className="mt-4">
                     <Form.Item label="提示词">
                       <Input.TextArea rows={4} placeholder="输入提示词..." />
