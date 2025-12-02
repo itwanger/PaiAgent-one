@@ -15,14 +15,14 @@ INSERT INTO node_definition (node_type, display_name, category, icon, input_sche
 VALUES ('ai_ping', 'AI Ping', 'LLM', '🏓',
  '{"type": "object", "properties": {"input": {"type": "string"}}}',
  '{"type": "object", "properties": {"output": {"type": "string"}, "tokens": {"type": "number"}}}',
- '{"type": "object", "properties": {"baseUrl": {"type": "string", "default": "https://api.aiping.com/v1"}, "apiKey": {"type": "string"}, "model": {"type": "string", "default": "ai-ping-v1"}, "prompt": {"type": "string"}, "temperature": {"type": "number", "default": 0.7}, "maxTokens": {"type": "number", "default": 1000}}}')
+ '{"type": "object", "properties": {"apiUrl": {"type": "string", "default": "https://api.aiping.com/v1"}, "apiKey": {"type": "string"}, "model": {"type": "string", "default": "ai-ping-v1"}, "prompt": {"type": "string"}, "temperature": {"type": "number", "default": 0.7, "minimum": 0, "maximum": 1}, "maxTokens": {"type": "number", "default": 1000}}}')
 ON DUPLICATE KEY UPDATE
   display_name = 'AI Ping',
   category = 'LLM',
   icon = '🏓',
   input_schema = '{"type": "object", "properties": {"input": {"type": "string"}}}',
   output_schema = '{"type": "object", "properties": {"output": {"type": "string"}, "tokens": {"type": "number"}}}',
-  config_schema = '{"type": "object", "properties": {"baseUrl": {"type": "string", "default": "https://api.aiping.com/v1"}, "apiKey": {"type": "string"}, "model": {"type": "string", "default": "ai-ping-v1"}, "prompt": {"type": "string"}, "temperature": {"type": "number", "default": 0.7}, "maxTokens": {"type": "number", "default": 1000}}}';
+  config_schema = '{"type": "object", "properties": {"apiUrl": {"type": "string", "default": "https://api.aiping.com/v1"}, "apiKey": {"type": "string"}, "model": {"type": "string", "default": "ai-ping-v1"}, "prompt": {"type": "string"}, "temperature": {"type": "number", "default": 0.7, "minimum": 0, "maximum": 1}, "maxTokens": {"type": "number", "default": 1000}}}';
 
 -- 验证插入结果
 SELECT node_type, display_name, category, icon, created_at

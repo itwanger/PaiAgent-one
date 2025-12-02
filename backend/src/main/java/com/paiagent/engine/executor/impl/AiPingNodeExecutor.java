@@ -43,6 +43,8 @@ public class AiPingNodeExecutor implements NodeExecutor {
         String apiKey = (String) data.get("apiKey");
         String model = (String) data.get("model");
         Double temperature = data.get("temperature") != null ? ((Number) data.get("temperature")).doubleValue() : 0.7;
+        if (temperature < 0) temperature = 0.0;
+        if (temperature > 1) temperature = 1.0;
         String promptTemplate = (String) data.get("prompt");
 
         // 获取输入参数配置

@@ -30,7 +30,7 @@ public class DataInitializer implements CommandLineRunner {
             createNodeDefinition("ai_ping", "AI Ping", "LLM", "🏓",
                 "{\"type\": \"object\", \"properties\": {\"input\": {\"type\": \"string\"}}}",
                 "{\"type\": \"object\", \"properties\": {\"output\": {\"type\": \"string\"}, \"tokens\": {\"type\": \"number\"}}}",
-                "{\"type\": \"object\", \"properties\": {\"apiUrl\": {\"type\": \"string\", \"default\": \"https://api.aiping.com/v1\"}, \"apiKey\": {\"type\": \"string\"}, \"model\": {\"type\": \"string\", \"default\": \"ai-ping-v1\"}, \"prompt\": {\"type\": \"string\"}, \"temperature\": {\"type\": \"number\", \"default\": 0.7}, \"maxTokens\": {\"type\": \"number\", \"default\": 1000}}}")
+                "{\"type\": \"object\", \"properties\": {\"apiUrl\": {\"type\": \"string\", \"default\": \"https://api.aiping.com/v1\"}, \"apiKey\": {\"type\": \"string\"}, \"model\": {\"type\": \"string\", \"default\": \"ai-ping-v1\"}, \"prompt\": {\"type\": \"string\"}, \"temperature\": {\"type\": \"number\", \"default\": 0.7, \"minimum\": 0, \"maximum\": 1}, \"maxTokens\": {\"type\": \"number\", \"default\": 1000}}}")
         );
 
         // 检查并初始化每个节点

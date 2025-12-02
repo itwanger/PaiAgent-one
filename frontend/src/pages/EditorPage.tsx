@@ -831,16 +831,16 @@ const EditorPage = () => {
                       />
                     </Form.Item>
                     <Form.Item label="温度">
-                      <Input 
-                        type="number" 
-                        step="0.1" 
-                        min="0" 
-                        max="2"
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="1"
                         value={llmConfig.temperature}
                         onChange={(e) => setLlmConfig({...llmConfig, temperature: parseFloat(e.target.value) || 0.7})}
                       />
                       <div className="text-xs text-gray-500 mt-1">
-                        控制输出随机性，范围 0-2，值越高越随机
+                        控制输出随机性，范围 0-1，值越高越随机
                       </div>
                     </Form.Item>
                     <Button type="primary" block onClick={handleSaveLlmConfig}>
@@ -861,7 +861,7 @@ const EditorPage = () => {
                       <Input.TextArea rows={4} placeholder="输入提示词..." />
                     </Form.Item>
                     <Form.Item label="温度">
-                      <Input type="number" step="0.1" defaultValue="0.7" />
+                      <Input type="number" step="0.1" min="0" max="1" defaultValue="0.7" />
                     </Form.Item>
                     <Button type="primary" block>
                       保存配置
