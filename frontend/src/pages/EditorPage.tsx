@@ -404,6 +404,41 @@ const EditorPage = () => {
     navigate(`/editor/${workflow.id}`);
   };
 
+  // 新建工作流
+  const handleCreateNew = () => {
+    setCurrentWorkflowId(null);
+    setWorkflowName('未命名工作流');
+    
+    // 创建默认的输入和输出节点(上下排列)
+    const defaultNodes = [
+      {
+        id: 'input-default',
+        type: 'default',
+        position: { x: 250, y: 100 },
+        data: { 
+          label: '输入节点',
+          type: 'input'
+        },
+      },
+      {
+        id: 'output-default',
+        type: 'default',
+        position: { x: 250, y: 400 },
+        data: { 
+          label: '输出节点',
+          type: 'output',
+          outputParams: [],
+          responseContent: ''
+        },
+      },
+    ];
+    
+    setNodes(defaultNodes);
+    setEdges([]);
+    navigate('/editor');
+    message.info('已创建新工作流');
+  };
+
   // 保存 LLM 节点配置
   const handleSaveLlmConfig = () => {
     if (!selectedNode) return;
@@ -613,6 +648,13 @@ const EditorPage = () => {
         </div>
         
         <div className="flex items-center gap-3">
+          <Button
+            icon={<PlusOutlined />}
+            onClick={handleCreateNew}
+            size="large"
+          >
+            新建
+          </Button>
           <Button
             icon={<FolderOpenOutlined />}
             onClick={handleOpenLoadModal}
