@@ -6,16 +6,12 @@ import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationP
 import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationResult;
 import com.paiagent.engine.executor.NodeExecutor;
 import com.paiagent.engine.model.WorkflowNode;
+import com.paiagent.service.MinioService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.io.InputStream;
-import java.io.FileOutputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +21,8 @@ import java.util.UUID;
 @Component
 public class TTSNodeExecutor implements NodeExecutor {
     
-    private static final String AUDIO_STORAGE_DIR = "audio_output";
+    @Autowired
+    private MinioService minioService;
     
     @Override
     public Map<String, Object> execute(WorkflowNode node, Map<String, Object> input) throws Exception {
@@ -65,15 +62,19 @@ public class TTSNodeExecutor implements NodeExecutor {
             throw new RuntimeException("阿里百炼 TTS 返回的音频URL为空");
         }
         
-        String fileName = downloadAudioFile(audioUrl);
-        String localAudioUrl = "/audio/" + fileName;
+        log.info("阿里百炼 TTS 返回音频URL: {}", audioUrl);
+        
+        // 上传音频文件到 MinIO
+        String fileName = "audio_" + UUID.randomUUID() + ".wav";
+        String objectName = "audio/" + fileName;
+        String minioUrl = minioService.uploadFromUrl(audioUrl, objectName, "audio/wav");
         
         Map<String, Object> output = new HashMap<>();
-        output.put("audioUrl", localAudioUrl);
+        output.put("audioUrl", minioUrl);
         output.put("fileName", fileName);
-        output.put("output", localAudioUrl);
+        output.put("output", minioUrl);
         
-        log.info("TTS 音频生成成功 - 远程URL: {}, 本地文件: {}", audioUrl, fileName);
+        log.info("TTS 音频已上传到 MinIO: {}", minioUrl);
         
         return output;
     }
@@ -85,29 +86,6 @@ public class TTSNodeExecutor implements NodeExecutor {
             log.warn("未知音色: {}, 使用默认音色 CHERRY", voiceStr);
             return AudioParameters.Voice.CHERRY;
         }
-    }
-    
-    private String downloadAudioFile(String audioUrl) throws Exception {
-        String fileName = "audio_" + UUID.randomUUID() + ".wav";
-        Path audioDir = Paths.get(AUDIO_STORAGE_DIR);
-        
-        if (!Files.exists(audioDir)) {
-            Files.createDirectories(audioDir);
-        }
-        
-        Path audioFile = audioDir.resolve(fileName);
-        
-        try (InputStream in = new URL(audioUrl).openStream();
-             FileOutputStream out = new FileOutputStream(audioFile.toFile())) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
-        
-        log.info("音频文件已下载到本地: {}", audioFile.toAbsolutePath());
-        return fileName;
     }
     
     private String extractInputText(WorkflowNode node, Map<String, Object> input) {

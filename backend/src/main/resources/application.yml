@@ -40,3 +40,11 @@ springdoc:
     title: PaiAgent API
     description: AI Agent 流图执行面板 API 文档
     version: 1.0.0
+
+# MinIO 配置
+minio:
+  endpoint: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: paiagent
+  publicUrl: http://localhost:9000

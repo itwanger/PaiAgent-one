@@ -236,21 +236,26 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
                   // 检查 output 字段
                   if (!audioUrl && outputData.output && typeof outputData.output === 'string') {
                     const output = outputData.output;
-                    // 检查是否包含 <audio> 标签
-                    if (output.includes('<audio') && output.includes('src=')) {
+                    // 检查是否是 MinIO URL 或包含 <audio> 标签
+                    if (output.includes('http://') || output.includes('https://')) {
+                      // 直接是 URL
+                      audioUrl = output;
+                    } else if (output.includes('<audio') && output.includes('src=')) {
                       // 提取 src 属性中的 URL
                       const srcMatch = output.match(/src="([^"]+)"/);
                       if (srcMatch && srcMatch[1]) {
                         audioUrl = srcMatch[1];
                       }
                     } else if (output.startsWith('/audio/')) {
-                      // 直接是音频 URL
-                      audioUrl = output;
+                      // 相对路径
+                      audioUrl = 'http://localhost:8080' + output;
                     }
                   }
                 }
                 
-                if (audioUrl && audioUrl.startsWith('/audio/')) {
+                console.log('检测到的 audioUrl:', audioUrl);
+                
+                if (audioUrl) {
                   return (
                     <AudioPlayer 
                       audioUrl={audioUrl}

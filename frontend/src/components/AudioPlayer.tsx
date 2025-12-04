@@ -16,11 +16,6 @@ const AudioPlayer = ({ audioUrl, fileName }: AudioPlayerProps) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // 处理音频 URL - 如果是相对路径,加上后端地址
-  const fullAudioUrl = audioUrl.startsWith('/') 
-    ? `http://localhost:8080${audioUrl}` 
-    : audioUrl;
-
   // 格式化时间显示
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -86,7 +81,7 @@ const AudioPlayer = ({ audioUrl, fileName }: AudioPlayerProps) => {
 
   return (
     <Card title="🎵 音频播放器" size="small" className="mb-4">
-      <audio ref={audioRef} src={fullAudioUrl} />
+      <audio ref={audioRef} src={audioUrl} />
       
       <Space direction="vertical" className="w-full">
         {/* 播放控制按钮 */}
