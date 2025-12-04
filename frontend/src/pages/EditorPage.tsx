@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button, Input, Form, Card, message, Checkbox, Select, Space, Modal, List } from 'antd';
+import { Button, Input, Form, message, Checkbox, Select, Space, Modal, List } from 'antd';
 import { SaveOutlined, FolderOpenOutlined, BugOutlined, LogoutOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
 import NodePanel from '../components/NodePanel';
@@ -28,6 +28,18 @@ interface LlmOutputParam {
   name: string;
   type: string;
   description?: string;
+}
+
+interface TtsInputParam {
+  name: string;
+  type: 'input' | 'reference';
+  value: string;
+  referenceNode?: string;
+}
+
+interface TtsOutputParam {
+  name: string;
+  value: string;
 }
 
 /**
@@ -59,6 +71,16 @@ const EditorPage = () => {
   const [llmInputParams, setLlmInputParams] = useState<LlmInputParam[]>([]);
   const [llmOutputParams, setLlmOutputParams] = useState<LlmOutputParam[]>([]);
 
+  // TTS 节点配置状态
+  const [ttsConfig, setTtsConfig] = useState({
+    apiKey: '',
+    model: 'qwen3-tts-flash',
+    voice: 'Cherry',
+    languageType: 'Auto'
+  });
+  const [ttsInputParams, setTtsInputParams] = useState<TtsInputParam[]>([]);
+  const [ttsOutputParams, setTtsOutputParams] = useState<TtsOutputParam[]>([]);
+
   // 处理节点拖拽开始
   const handleDragStart = (event: React.DragEvent, nodeType: string, displayName: string) => {
     event.dataTransfer.setData('application/reactflow-type', nodeType);
@@ -73,19 +95,29 @@ const EditorPage = () => {
     
     // 加载节点配置
     if (node.data?.type === 'output') {
-      setOutputParams(node.data?.outputParams || []);
-      setResponseContent(node.data?.responseContent || '');
+      setOutputParams((node.data?.outputParams as OutputParam[]) || []);
+      setResponseContent((node.data?.responseContent as string) || '');
     } else if (node.data?.type === 'openai' || node.data?.type === 'deepseek' || node.data?.type === 'qwen') {
       // 加载 LLM 节点配置
       setLlmConfig({
-        apiUrl: node.data?.apiUrl || '',
-        apiKey: node.data?.apiKey || '',
-        model: node.data?.model || '',
-        temperature: node.data?.temperature || 0.7,
-        prompt: node.data?.prompt || ''
+        apiUrl: (node.data?.apiUrl as string) || '',
+        apiKey: (node.data?.apiKey as string) || '',
+        model: (node.data?.model as string) || '',
+        temperature: (node.data?.temperature as number) || 0.7,
+        prompt: (node.data?.prompt as string) || ''
       });
-      setLlmInputParams(node.data?.inputParams || []);
-      setLlmOutputParams(node.data?.outputParams || []);
+      setLlmInputParams((node.data?.inputParams as LlmInputParam[]) || []);
+      setLlmOutputParams((node.data?.outputParams as LlmOutputParam[]) || []);
+    } else if (node.data?.type === 'tts') {
+      // 加载 TTS 节点配置
+      setTtsConfig({
+        apiKey: (node.data?.apiKey as string) || '',
+        model: (node.data?.model as string) || 'qwen3-tts-flash',
+        voice: (node.data?.voice as string) || 'Cherry',
+        languageType: (node.data?.languageType as string) || 'Auto'
+      });
+      setTtsInputParams((node.data?.inputParams as TtsInputParam[]) || []);
+      setTtsOutputParams((node.data?.outputParams as TtsOutputParam[]) || []);
     }
   };
 
@@ -270,7 +302,7 @@ const EditorPage = () => {
       case 'qwen':
         return ['output', 'tokens'];
       case 'tts':
-        return ['audioUrl', 'duration', 'fileSize'];
+        return ['audioUrl', 'fileName', 'output'];
       default:
         return ['output'];
     }
@@ -280,8 +312,8 @@ const EditorPage = () => {
   const getReferenceableParams = () => {
     const params: { label: string; value: string }[] = [];
     getReferenceableNodes().forEach(node => {
-      const nodeType = node.data?.type || '';
-      const nodeLabel = node.data?.label || node.id;
+      const nodeType = (node.data?.type as string) || '';
+      const nodeLabel = (node.data?.label as string) || node.id;
       const outputParams = getNodeOutputParams(nodeType);
       
       outputParams.forEach(param => {
@@ -460,6 +492,91 @@ const EditorPage = () => {
     const newParams = [...llmInputParams];
     newParams[index] = { ...newParams[index], [field]: value };
     setLlmInputParams(newParams);
+  };
+
+  // 保存 TTS 节点配置
+  const handleSaveTtsConfig = () => {
+    if (!selectedNode) return;
+
+    if (!ttsConfig.apiKey) {
+      message.warning('请填写 API Key');
+      return;
+    }
+    if (!ttsConfig.model) {
+      message.warning('请填写模型名称');
+      return;
+    }
+
+    // 验证输入参数
+    for (const param of ttsInputParams) {
+      if (!param.name) {
+        message.warning('请填写所有参数名');
+        return;
+      }
+      if (param.type === 'input' && !param.value) {
+        message.warning('请填写输入值');
+        return;
+      }
+      if (param.type === 'reference' && !param.referenceNode) {
+        message.warning('请选择引用参数');
+        return;
+      }
+    }
+
+    // 验证输出参数
+    for (const param of ttsOutputParams) {
+      if (!param.name) {
+        message.warning('请填写所有输出参数名');
+        return;
+      }
+    }
+
+    const updatedData = {
+      ...selectedNode.data,
+      apiKey: ttsConfig.apiKey,
+      model: ttsConfig.model,
+      voice: ttsConfig.voice,
+      languageType: ttsConfig.languageType,
+      inputParams: ttsInputParams,
+      outputParams: ttsOutputParams
+    };
+
+    useWorkflowStore.getState().updateNode(selectedNode.id, updatedData);
+    message.success('配置保存成功');
+  };
+
+  // 添加 TTS 输入参数
+  const handleAddTtsInputParam = () => {
+    setTtsInputParams([...ttsInputParams, { name: '', type: 'input', value: '' }]);
+  };
+
+  // 删除 TTS 输入参数
+  const handleRemoveTtsInputParam = (index: number) => {
+    setTtsInputParams(ttsInputParams.filter((_, i) => i !== index));
+  };
+
+  // 更新 TTS 输入参数
+  const handleUpdateTtsInputParam = (index: number, field: keyof TtsInputParam, value: string) => {
+    const newParams = [...ttsInputParams];
+    newParams[index] = { ...newParams[index], [field]: value };
+    setTtsInputParams(newParams);
+  };
+
+  // 添加 TTS 输出参数
+  const handleAddTtsOutputParam = () => {
+    setTtsOutputParams([...ttsOutputParams, { name: '', value: '' }]);
+  };
+
+  // 删除 TTS 输出参数
+  const handleRemoveTtsOutputParam = (index: number) => {
+    setTtsOutputParams(ttsOutputParams.filter((_, i) => i !== index));
+  };
+
+  // 更新 TTS 输出参数
+  const handleUpdateTtsOutputParam = (index: number, field: keyof TtsOutputParam, value: string) => {
+    const newParams = [...ttsOutputParams];
+    newParams[index] = { ...newParams[index], [field]: value };
+    setTtsOutputParams(newParams);
   };
 
   // 添加 LLM 输出参数
@@ -848,23 +965,194 @@ const EditorPage = () => {
                   </Form>
                 )}
 
-                {/* 其他节点配置 (TTS 等工具节点) */}
+                {/* TTS 节点配置 (超拟人音频) */}
+                {selectedNode.data?.type === 'tts' && (
+                  <Form layout="vertical" className="mt-4">
+                    {/* 输入配置 */}
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="font-medium text-gray-700">输入配置</label>
+                        <Button 
+                          type="dashed" 
+                          size="small" 
+                          icon={<PlusOutlined />}
+                          onClick={handleAddTtsInputParam}
+                        >
+                          添加
+                        </Button>
+                      </div>
+                      
+                      {ttsInputParams.map((param, index) => (
+                        <div key={index} className="mb-4 p-3 bg-gray-50 rounded">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Input 
+                              placeholder="参数名 (如: text)"
+                              value={param.name}
+                              onChange={(e) => handleUpdateTtsInputParam(index, 'name', e.target.value)}
+                              style={{ width: 120 }}
+                            />
+                            <Select
+                              value={param.type}
+                              onChange={(value) => handleUpdateTtsInputParam(index, 'type', value)}
+                              style={{ width: 100 }}
+                            >
+                              <Select.Option value="input">输入</Select.Option>
+                              <Select.Option value="reference">引用</Select.Option>
+                            </Select>
+                            <Button 
+                              type="text" 
+                              danger 
+                              icon={<DeleteOutlined />}
+                              onClick={() => handleRemoveTtsInputParam(index)}
+                            />
+                          </div>
+                          <div>
+                            {param.type === 'input' ? (
+                              <Input.TextArea
+                                placeholder="输入值"
+                                value={param.value}
+                                onChange={(e) => handleUpdateTtsInputParam(index, 'value', e.target.value)}
+                                rows={2}
+                              />
+                            ) : (
+                              <Select
+                                placeholder="选择引用参数"
+                                value={param.referenceNode}
+                                onChange={(value) => handleUpdateTtsInputParam(index, 'referenceNode', value)}
+                                style={{ width: '100%' }}
+                              >
+                                {getReferenceableParams().map((p) => (
+                                  <Select.Option key={p.value} value={p.value}>
+                                    {p.label}
+                                  </Select.Option>
+                                ))}
+                              </Select>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {ttsInputParams.length === 0 && (
+                        <div className="text-center py-4 text-gray-400 text-sm border border-dashed rounded">
+                          暂无输入参数,点击"添加"按钮创建 text 参数
+                        </div>
+                      )}
+                      
+                      {/* 固定配置项 */}
+                      <div className="mt-4 space-y-3">
+                        <Form.Item label="音色 (voice)" className="mb-0">
+                          <Select
+                            value={ttsConfig.voice}
+                            onChange={(value) => setTtsConfig({ ...ttsConfig, voice: value })}
+                          >
+                            <Select.Option value="Cherry">Cherry (芊悦)</Select.Option>
+                            <Select.Option value="Serena">Serena (苏瑶)</Select.Option>
+                            <Select.Option value="Ethan">Ethan (晨煦)</Select.Option>
+                            <Select.Option value="Chelsie">Chelsie (千雪)</Select.Option>
+                            <Select.Option value="Momo">Momo (茉兔)</Select.Option>
+                            <Select.Option value="Vivian">Vivian (十三)</Select.Option>
+                            <Select.Option value="Moon">Moon (月白)</Select.Option>
+                            <Select.Option value="Maia">Maia (四月)</Select.Option>
+                            <Select.Option value="Kai">Kai (凯)</Select.Option>
+                            <Select.Option value="Nofish">Nofish (不吃鱼)</Select.Option>
+                            <Select.Option value="Bella">Bella (萌宝)</Select.Option>
+                            <Select.Option value="Jennifer">Jennifer (詹妮弗)</Select.Option>
+                            <Select.Option value="Ryan">Ryan (甜茶)</Select.Option>
+                            <Select.Option value="Katerina">Katerina (卡捷琳娜)</Select.Option>
+                            <Select.Option value="Aiden">Aiden (艾登)</Select.Option>
+                          </Select>
+                        </Form.Item>
+
+                        <Form.Item label="语言类型 (language_type)" className="mb-0">
+                          <Select
+                            value={ttsConfig.languageType}
+                            onChange={(value) => setTtsConfig({ ...ttsConfig, languageType: value })}
+                          >
+                            <Select.Option value="Auto">Auto</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      </div>
+                    </div>
+
+                    {/* 输出配置 */}
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="font-medium text-gray-700">输出配置</label>
+                        <Button 
+                          type="dashed" 
+                          size="small" 
+                          icon={<PlusOutlined />}
+                          onClick={handleAddTtsOutputParam}
+                        >
+                          添加
+                        </Button>
+                      </div>
+                      
+                      {ttsOutputParams.map((param, index) => (
+                        <div key={index} className="flex items-center gap-2 mb-3">
+                          <Input 
+                            placeholder="参数名 (如: voice_url)"
+                            value={param.name}
+                            onChange={(e) => handleUpdateTtsOutputParam(index, 'name', e.target.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <Input
+                            placeholder="参数值 (引用字段,如: audioUrl)"
+                            value={param.value}
+                            onChange={(e) => handleUpdateTtsOutputParam(index, 'value', e.target.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <Button 
+                            type="text" 
+                            danger 
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleRemoveTtsOutputParam(index)}
+                          />
+                        </div>
+                      ))}
+                      
+                      {ttsOutputParams.length === 0 && (
+                        <div className="text-center py-4 text-gray-400 text-sm border border-dashed rounded">
+                          暂无输出参数,点击"添加"按钮创建 voice_url 参数
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 基本信息 */}
+                    <div className="mb-4">
+                      <label className="font-medium text-gray-700 block mb-3">基本信息</label>
+                      <Form.Item label="API Key">
+                        <Input.Password
+                          placeholder="请输入阿里百炼 API Key"
+                          value={ttsConfig.apiKey}
+                          onChange={(e) => setTtsConfig({ ...ttsConfig, apiKey: e.target.value })}
+                        />
+                      </Form.Item>
+                      <Form.Item label="模型名称">
+                        <Input
+                          placeholder="请输入模型名称"
+                          value={ttsConfig.model}
+                          onChange={(e) => setTtsConfig({ ...ttsConfig, model: e.target.value })}
+                        />
+                      </Form.Item>
+                    </div>
+
+                    <Button type="primary" block onClick={handleSaveTtsConfig}>
+                      保存配置
+                    </Button>
+                  </Form>
+                )}
+
+                {/* 其他节点配置 */}
                 {selectedNode.data?.type !== 'input' && 
                  selectedNode.data?.type !== 'output' && 
                  selectedNode.data?.type !== 'openai' && 
                  selectedNode.data?.type !== 'deepseek' && 
-                 selectedNode.data?.type !== 'qwen' && (
-                  <Form layout="vertical" className="mt-4">
-                    <Form.Item label="提示词">
-                      <Input.TextArea rows={4} placeholder="输入提示词..." />
-                    </Form.Item>
-                    <Form.Item label="温度">
-                      <Input type="number" step="0.1" defaultValue="0.7" />
-                    </Form.Item>
-                    <Button type="primary" block>
-                      保存配置
-                    </Button>
-                  </Form>
+                 selectedNode.data?.type !== 'qwen' && 
+                 selectedNode.data?.type !== 'tts' && (
+                  <div className="mt-4 text-center text-gray-400 text-sm">
+                    该节点暂无可配置项
+                  </div>
                 )}
               </div>
             ) : (

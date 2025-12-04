@@ -210,18 +210,62 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
         {executionResult && executionResult.status === 'SUCCESS' && (
           <div className="p-4 border-b border-gray-200">
             <Card title="最终输出" size="small">
-              {/* 如果输出包含音频URL,显示音频播放器 */}
-              {executionResult.outputData.audioUrl && typeof executionResult.outputData.audioUrl === 'string' ? (
-                <AudioPlayer 
-                  audioUrl={executionResult.outputData.audioUrl as string}
-                  fileName={executionResult.outputData.fileName as string | undefined}
-                />
-              ) : null}
-              
-              {/* 显示完整的输出数据 */}
-              <pre className="bg-gray-50 p-2 rounded text-xs overflow-auto max-h-48">
-                {JSON.stringify(executionResult.outputData, null, 2)}
-              </pre>
+              {/* 如果输出包含音频URL或output字段指向音频,显示音频播放器 */}
+              {(() => {
+                let audioUrl: string | null = null;
+                let fileName: string | undefined = undefined;
+                
+                // 解析 outputData (可能是字符串)
+                let outputData = executionResult.outputData;
+                if (typeof outputData === 'string') {
+                  try {
+                    outputData = JSON.parse(outputData);
+                  } catch (e) {
+                    console.error('Failed to parse outputData:', e);
+                  }
+                }
+                
+                if (typeof outputData === 'object' && outputData !== null) {
+                  fileName = outputData.fileName as string | undefined;
+                  
+                  // 先检查 audioUrl 字段
+                  if (outputData.audioUrl && typeof outputData.audioUrl === 'string') {
+                    audioUrl = outputData.audioUrl;
+                  }
+                  
+                  // 检查 output 字段
+                  if (!audioUrl && outputData.output && typeof outputData.output === 'string') {
+                    const output = outputData.output;
+                    // 检查是否包含 <audio> 标签
+                    if (output.includes('<audio') && output.includes('src=')) {
+                      // 提取 src 属性中的 URL
+                      const srcMatch = output.match(/src="([^"]+)"/);
+                      if (srcMatch && srcMatch[1]) {
+                        audioUrl = srcMatch[1];
+                      }
+                    } else if (output.startsWith('/audio/')) {
+                      // 直接是音频 URL
+                      audioUrl = output;
+                    }
+                  }
+                }
+                
+                if (audioUrl && audioUrl.startsWith('/audio/')) {
+                  return (
+                    <AudioPlayer 
+                      audioUrl={audioUrl}
+                      fileName={fileName}
+                    />
+                  );
+                }
+                
+                // 如果不是音频,显示原始输出数据
+                return (
+                  <pre className="bg-gray-50 p-2 rounded text-xs overflow-auto max-h-48">
+                    {JSON.stringify(executionResult.outputData, null, 2)}
+                  </pre>
+                );
+              })()}
             </Card>
           </div>
         )}

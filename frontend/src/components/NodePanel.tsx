@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Collapse, message } from 'antd';
+import { Collapse, message } from 'antd';
 import { getNodeTypes, NodeDefinition } from '../api/workflow';
 
 interface NodePanelProps {

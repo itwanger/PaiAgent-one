@@ -16,6 +16,11 @@ const AudioPlayer = ({ audioUrl, fileName }: AudioPlayerProps) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
+  // 处理音频 URL - 如果是相对路径,加上后端地址
+  const fullAudioUrl = audioUrl.startsWith('/') 
+    ? `http://localhost:8080${audioUrl}` 
+    : audioUrl;
+
   // 格式化时间显示
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -24,14 +29,20 @@ const AudioPlayer = ({ audioUrl, fileName }: AudioPlayerProps) => {
   };
 
   // 播放/暂停切换
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
+      try {
+        if (isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          await audioRef.current.play();
+          setIsPlaying(true);
+        }
+      } catch (error) {
+        console.error('播放失败:', error);
+        setIsPlaying(false);
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -75,7 +86,7 @@ const AudioPlayer = ({ audioUrl, fileName }: AudioPlayerProps) => {
 
   return (
     <Card title="🎵 音频播放器" size="small" className="mb-4">
-      <audio ref={audioRef} src={audioUrl} />
+      <audio ref={audioRef} src={fullAudioUrl} />
       
       <Space direction="vertical" className="w-full">
         {/* 播放控制按钮 */}
@@ -87,12 +98,6 @@ const AudioPlayer = ({ audioUrl, fileName }: AudioPlayerProps) => {
             icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
             onClick={togglePlayPause}
           />
-          <Button
-            icon={<DownloadOutlined />}
-            onClick={handleDownload}
-          >
-            下载
-          </Button>
         </div>
 
         {/* 进度条 */}
