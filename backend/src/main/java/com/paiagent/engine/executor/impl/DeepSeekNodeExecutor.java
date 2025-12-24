@@ -108,50 +108,50 @@ public class DeepSeekNodeExecutor implements NodeExecutor {
         
         log.info("请求 DeepSeek API: {}", apiUrl);
         log.info("请求体: {}", requestBody.toJSONString());
-        
-        String apiResponse;
+
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(
                 apiUrl,
                 entity,
                 String.class
             );
-            
+
             log.info("API 响应状态码: {}", response.getStatusCode());
             log.info("API 响应内容: {}", response.getBody());
-            
+
             JSONObject responseJson = JSON.parseObject(response.getBody());
             JSONArray choices = responseJson.getJSONArray("choices");
+            String apiResponse;
             if (choices != null && !choices.isEmpty()) {
                 JSONObject firstChoice = choices.getJSONObject(0);
                 JSONObject messageObj = firstChoice.getJSONObject("message");
                 apiResponse = messageObj.getString("content");
             } else {
-                apiResponse = "API 返回格式异常: " + response.getBody();
+                throw new RuntimeException("API 返回格式异常: " + response.getBody());
             }
+
+            Map<String, Object> output = new HashMap<>();
+
+            // 根据输出参数配置返回结果
+            List<Map<String, Object>> outputParams = (List<Map<String, Object>>) data.get("outputParams");
+            if (outputParams != null && !outputParams.isEmpty()) {
+                for (Map<String, Object> param : outputParams) {
+                    String paramName = (String) param.get("name");
+                    output.put(paramName, apiResponse);
+                }
+            } else {
+                output.put("output", apiResponse);
+            }
+
+            output.put("tokens", 150);
+
+            log.info("DeepSeek 节点输出: {}", output);
+
+            return output;
         } catch (Exception e) {
             log.error("调用 DeepSeek API 失败", e);
-            apiResponse = "调用 API 失败: " + e.getMessage();
+            throw new RuntimeException("调用 DeepSeek API 失败: " + e.getMessage(), e);
         }
-        
-        Map<String, Object> output = new HashMap<>();
-        
-        // 根据输出参数配置返回结果
-        List<Map<String, Object>> outputParams = (List<Map<String, Object>>) data.get("outputParams");
-        if (outputParams != null && !outputParams.isEmpty()) {
-            for (Map<String, Object> param : outputParams) {
-                String paramName = (String) param.get("name");
-                output.put(paramName, apiResponse);
-            }
-        } else {
-            output.put("output", apiResponse);
-        }
-        
-        output.put("tokens", 150);
-        
-        log.info("DeepSeek 节点输出: {}", output);
-        
-        return output;
     }
     
     @Override

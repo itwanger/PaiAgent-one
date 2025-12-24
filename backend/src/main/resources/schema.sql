@@ -75,6 +75,11 @@ INSERT INTO node_definition (node_type, display_name, category, icon, input_sche
  '{"type": "object", "properties": {"input": {"type": "string"}}}',
  '{"type": "object", "properties": {"output": {"type": "string"}, "tokens": {"type": "number"}}}',
  '{"type": "object", "properties": {"apiKey": {"type": "string"}, "model": {"type": "string", "default": "qwen-turbo"}, "prompt": {"type": "string"}, "temperature": {"type": "number", "default": 0.7}, "maxTokens": {"type": "number", "default": 1000}}}'),
+
+('zhipu', '智谱', 'LLM', '🔮',
+ '{"type": "object", "properties": {"input": {"type": "string"}}}',
+ '{"type": "object", "properties": {"output": {"type": "string"}, "tokens": {"type": "number"}}}',
+ '{"type": "object", "properties": {"apiKey": {"type": "string"}, "model": {"type": "string", "default": "glm-4"}, "prompt": {"type": "string"}, "temperature": {"type": "number", "default": 0.7}, "maxTokens": {"type": "number", "default": 1000}}}'),
  
 ('tts', '超拟人音频合成', 'TOOL', '🔊',
  '{"type": "object", "properties": {"text": {"type": "string"}}}',

@@ -66,7 +66,9 @@ const EditorPage = () => {
     apiKey: '',
     model: '',
     temperature: 0.7,
-    prompt: ''
+    prompt: '',
+    maxTokens: 2048,
+    enableStream: false
   });
   const [llmInputParams, setLlmInputParams] = useState<LlmInputParam[]>([]);
   const [llmOutputParams, setLlmOutputParams] = useState<LlmOutputParam[]>([]);
@@ -97,14 +99,16 @@ const EditorPage = () => {
     if (node.data?.type === 'output') {
       setOutputParams((node.data?.outputParams as OutputParam[]) || []);
       setResponseContent((node.data?.responseContent as string) || '');
-    } else if (node.data?.type === 'openai' || node.data?.type === 'deepseek' || node.data?.type === 'qwen') {
+    } else if (node.data?.type === 'openai' || node.data?.type === 'deepseek' || node.data?.type === 'qwen' || node.data?.type === 'zhipu') {
       // 加载 LLM 节点配置
       setLlmConfig({
         apiUrl: (node.data?.apiUrl as string) || '',
         apiKey: (node.data?.apiKey as string) || '',
         model: (node.data?.model as string) || '',
         temperature: (node.data?.temperature as number) || 0.7,
-        prompt: (node.data?.prompt as string) || ''
+        prompt: (node.data?.prompt as string) || '',
+        maxTokens: (node.data?.maxTokens as number) || 2048,
+        enableStream: (node.data?.enableStream as boolean) || false
       });
       setLlmInputParams((node.data?.inputParams as LlmInputParam[]) || []);
       setLlmOutputParams((node.data?.outputParams as LlmOutputParam[]) || []);
@@ -300,6 +304,7 @@ const EditorPage = () => {
       case 'openai':
       case 'deepseek':
       case 'qwen':
+      case 'zhipu':
         return ['output', 'tokens'];
       case 'tts':
         return ['audioUrl', 'fileName', 'output'];
@@ -504,6 +509,8 @@ const EditorPage = () => {
       model: llmConfig.model,
       temperature: llmConfig.temperature,
       prompt: llmConfig.prompt,
+      maxTokens: llmConfig.maxTokens,
+      enableStream: llmConfig.enableStream,
       inputParams: llmInputParams,
       outputParams: llmOutputParams
     };
@@ -832,8 +839,8 @@ const EditorPage = () => {
                   </Form>
                 )}
 
-                {/* LLM 节点配置 (OpenAI/DeepSeek/Qwen) */}
-                {(selectedNode.data?.type === 'openai' || selectedNode.data?.type === 'deepseek' || selectedNode.data?.type === 'qwen') && (
+                {/* LLM 节点配置 (OpenAI/DeepSeek/Qwen/Zhipu) */}
+                {(selectedNode.data?.type === 'openai' || selectedNode.data?.type === 'deepseek' || selectedNode.data?.type === 'qwen' || selectedNode.data?.type === 'zhipu') && (
                   <Form layout="vertical" className="mt-4">
                     {/* 输入参数配置 */}
                     <div className="mb-6">
@@ -989,16 +996,40 @@ const EditorPage = () => {
                       />
                     </Form.Item>
                     <Form.Item label="温度">
-                      <Input 
-                        type="number" 
-                        step="0.1" 
-                        min="0" 
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
                         max="2"
                         value={llmConfig.temperature}
                         onChange={(e) => setLlmConfig({...llmConfig, temperature: parseFloat(e.target.value) || 0.7})}
                       />
                       <div className="text-xs text-gray-500 mt-1">
                         控制输出随机性，范围 0-2，值越高越随机
+                      </div>
+                    </Form.Item>
+                    <Form.Item label="最大 Tokens">
+                      <Input
+                        type="number"
+                        min="1"
+                        max="128000"
+                        step="1"
+                        value={llmConfig.maxTokens}
+                        onChange={(e) => setLlmConfig({...llmConfig, maxTokens: parseInt(e.target.value) || 2048})}
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        限制输出最大 token 数，默认 2048
+                      </div>
+                    </Form.Item>
+                    <Form.Item label="流式响应">
+                      <Checkbox
+                        checked={llmConfig.enableStream}
+                        onChange={(e) => setLlmConfig({...llmConfig, enableStream: e.target.checked})}
+                      >
+                        启用流式响应（速度更快）
+                      </Checkbox>
+                      <div className="text-xs text-gray-500 mt-1">
+                        启用后会更快返回结果，数据逐块生成
                       </div>
                     </Form.Item>
                     <Button type="primary" block onClick={handleSaveLlmConfig}>
@@ -1186,11 +1217,12 @@ const EditorPage = () => {
                 )}
 
                 {/* 其他节点配置 */}
-                {selectedNode.data?.type !== 'input' && 
-                 selectedNode.data?.type !== 'output' && 
-                 selectedNode.data?.type !== 'openai' && 
-                 selectedNode.data?.type !== 'deepseek' && 
-                 selectedNode.data?.type !== 'qwen' && 
+                {selectedNode.data?.type !== 'input' &&
+                 selectedNode.data?.type !== 'output' &&
+                 selectedNode.data?.type !== 'openai' &&
+                 selectedNode.data?.type !== 'deepseek' &&
+                 selectedNode.data?.type !== 'qwen' &&
+                 selectedNode.data?.type !== 'zhipu' &&
                  selectedNode.data?.type !== 'tts' && (
                   <div className="mt-4 text-center text-gray-400 text-sm">
                     该节点暂无可配置项
