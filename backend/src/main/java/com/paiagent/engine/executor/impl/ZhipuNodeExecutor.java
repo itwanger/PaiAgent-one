@@ -206,14 +206,17 @@ public class ZhipuNodeExecutor implements NodeExecutor {
             response.getFlowable().subscribe(
                 // 处理流式消息
                 chunk -> {
+                    log.info("收到流式 chunk: {}", chunk);
                     if (chunk.getChoices() != null && !chunk.getChoices().isEmpty()) {
                         Delta delta = chunk.getChoices().get(0).getDelta();
+                        log.info("Delta 对象: {}", delta);
                         if (delta != null) {
                             Object content = delta.getContent();
+                            log.info("Delta content: {}, 类型: {}", content, content != null ? content.getClass() : "null");
                             if (content != null) {
-                                String contentStr = String.valueOf(content);
+                                String contentStr = content.toString();
                                 fullContent.append(contentStr);
-                                log.debug("收到流式内容: {}", contentStr);
+                                log.info("追加流式内容: {}, 总长度: {}", contentStr, fullContent.length());
                             }
                         }
                     }
@@ -236,8 +239,13 @@ public class ZhipuNodeExecutor implements NodeExecutor {
                 }
             );
 
-            // 等待流式响应完成
-            latch.await();
+            // 等待流式响应完成（最多等待 2 分钟）
+            boolean completed = latch.await(120, java.util.concurrent.TimeUnit.SECONDS);
+            log.info("流式响应等待结果: completed={}, 内容长度={}", completed, fullContent.length());
+
+            if (!completed) {
+                log.warn("流式响应超时，但已收到部分内容，长度: {}", fullContent.length());
+            }
 
             if (error[0] != null) {
                 throw new RuntimeException("智谱 AI 流式响应失败: " + error[0].getMessage(), error[0]);
