@@ -153,9 +153,13 @@ const FlowCanvas = ({ onNodeClick }: FlowCanvasProps) => {
         }}
         fitView
       >
-        <Background />
-        <Controls />
-        <MiniMap />
+        <Background color="#b026ff" gap={50} />
+        <Controls className="!bg-cyber-dark/95 !border !border-cyber-purple/50 !rounded-lg" />
+        <MiniMap
+          nodeColor="#b026ff"
+          maskColor="rgba(176, 38, 255, 0.1)"
+          className="!bg-cyber-dark/95 !border !border-cyber-purple/50 !rounded-lg"
+        />
       </ReactFlow>
     </div>
   );

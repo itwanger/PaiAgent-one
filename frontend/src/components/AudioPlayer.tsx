@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Card, Button, Slider, Space } from 'antd';
-import { PlayCircleOutlined, PauseCircleOutlined, DownloadOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -47,16 +47,6 @@ const AudioPlayer = ({ audioUrl, fileName }: AudioPlayerProps) => {
       audioRef.current.currentTime = value;
       setCurrentTime(value);
     }
-  };
-
-  // 下载音频文件
-  const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = audioUrl;
-    link.download = fileName || 'audio.mp3';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // 监听音频播放时间更新

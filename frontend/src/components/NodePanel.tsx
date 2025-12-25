@@ -42,11 +42,11 @@ const NodePanel = ({ onDragStart }: NodePanelProps) => {
       key={node.nodeType}
       draggable
       onDragStart={(e) => onDragStart(e, node.nodeType, node.displayName)}
-      className="p-3 mb-2 bg-white border border-gray-200 rounded cursor-move hover:border-blue-400 hover:shadow-md transition-all"
+      className="p-3 mb-3 bg-cyber-gray border border-cyber-purple/50 rounded-lg cursor-move hover:border-cyber-cyan hover:shadow-neon-cyan hover:bg-cyber-purple/5 transition-all"
     >
-      <div className="flex items-center">
-        <span className="text-2xl mr-2">{node.icon}</span>
-        <span className="font-medium text-gray-700">{node.displayName}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">{node.icon}</span>
+        <span className="font-medium text-cyber-pink text-sm">{node.displayName}</span>
       </div>
     </div>
   );
@@ -54,26 +54,26 @@ const NodePanel = ({ onDragStart }: NodePanelProps) => {
   const items = [
     {
       key: 'llm',
-      label: <span className="font-semibold">🤖 大模型节点</span>,
+      label: <span className="font-semibold text-cyber-cyan text-glow text-sm">🤖 大模型节点</span>,
       children: (
-        <div>
+        <div className="pt-2">
           {llmNodes.length > 0 ? (
             llmNodes.map(renderNodeItem)
           ) : (
-            <div className="text-gray-400 text-center py-4">暂无节点</div>
+            <div className="text-cyber-pink/60 text-center py-6 text-sm">暂无节点</div>
           )}
         </div>
       ),
     },
     {
       key: 'tool',
-      label: <span className="font-semibold">🔧 工具节点</span>,
+      label: <span className="font-semibold text-cyber-cyan text-glow text-sm">🔧 工具节点</span>,
       children: (
-        <div>
+        <div className="pt-2">
           {toolNodes.length > 0 ? (
             toolNodes.map(renderNodeItem)
           ) : (
-            <div className="text-gray-400 text-center py-4">暂无节点</div>
+            <div className="text-cyber-pink/60 text-center py-6 text-sm">暂无节点</div>
           )}
         </div>
       ),
@@ -81,13 +81,16 @@ const NodePanel = ({ onDragStart }: NodePanelProps) => {
   ];
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-gray-100">
-        <h3 className="font-bold text-gray-800">节点库</h3>
+    <div className="h-full flex flex-col">
+      {/* 标题 */}
+      <div className="px-4 py-3 border-b border-cyber-purple/30 bg-cyber-dark/50">
+        <h3 className="font-bold text-cyber-cyan text-neon text-base">节点库</h3>
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
+
+      {/* 内容区 */}
+      <div className="flex-1 overflow-y-auto px-4 py-3">
         {loading ? (
-          <div className="text-center py-8 text-gray-400">加载中...</div>
+          <div className="text-center py-12 text-cyber-pink animate-pulse">加载中...</div>
         ) : (
           <>
             <Collapse
@@ -95,8 +98,9 @@ const NodePanel = ({ onDragStart }: NodePanelProps) => {
               ghost
               items={items}
               bordered={false}
+              className="bg-transparent"
             />
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-gray-600">
+            <div className="mt-3 px-3 py-2 bg-cyber-purple/10 rounded-lg text-xs text-cyber-cyan border border-cyber-purple/30 text-center">
               💡 拖拽节点到画布中使用
             </div>
           </>

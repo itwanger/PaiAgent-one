@@ -59,7 +59,6 @@ interface DebugDrawerProps {
 const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
   const [inputData, setInputData] = useState('');
   const [executing, setExecuting] = useState(false);
-  const [executionResult, setExecutionResult] = useState<ExecutionResponse | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [nodeResults, setNodeResults] = useState<NodeResult[]>([]);
   const [progress, setProgress] = useState(0);
@@ -183,14 +182,12 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
     }
 
     setExecuting(true);
-    setExecutionResult(null);
     setNodeResults([]);
     setLogs([]);
     setProgress(0);
 
     try {
-      const result = await onExecute(inputData);
-      setExecutionResult(result);
+      await onExecute(inputData);
     } catch (error) {
       addLog(`❌ 执行异常: ${error instanceof Error ? error.message : '未知错误'}`);
       setExecuting(false);
@@ -259,7 +256,7 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
     >
       <div className="flex flex-col h-full">
         {/* 输入区域 */}
-        <div className="p-4 bg-gray-50 border-gray-200">
+        <div className="p-4 bg-cyber-gray border-cyber-purple/30">
           <Card title="输入测试文本" size="small">
             <TextArea
               rows={4}
@@ -283,18 +280,18 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
 
         {/* 执行状态 */}
         {(executing || nodeResults.length > 0) && (
-          <div className="p-4 bg-gray-50 border-gray-200">
+          <div className="p-4 bg-cyber-gray border-cyber-purple/30">
             <Card title="执行状态" size="small">
               {executing && (
                 <div className="flex items-center gap-2 mb-2">
-                  <LoadingOutlined className="text-blue-500" />
-                  <span>执行中...</span>
+                  <LoadingOutlined className="text-cyber-cyan animate-glow-pulse" />
+                  <span className="text-cyber-cyan">执行中...</span>
                 </div>
               )}
               {nodeResults.length > 0 && (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-600 text-sm">
+                    <span className="text-cyber-cyan text-sm">
                       已完成节点: {nodeResults.filter(r => r.status !== 'RUNNING').length} / {nodeResults.length}
                     </span>
                   </div>
@@ -307,7 +304,7 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
 
         {/* 结果展示区 */}
         {nodeResults.length > 0 && (
-          <div className="p-4 bg-gray-50 border-gray-200">
+          <div className="p-4 bg-cyber-gray border-cyber-purple/30">
             <Card title="节点执行结果" size="small">
               <Collapse
                 items={nodeResults.map(renderNodeResultItem)}
@@ -319,7 +316,7 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
 
         {/* 最终输出 */}
         {!executing && nodeResults.length > 0 && nodeResults[nodeResults.length - 1].output && (
-          <div className="p-4 bg-gray-50 border-gray-200">
+          <div className="p-4 bg-cyber-gray border-cyber-purple/30">
             <Card title="最终输出" size="small">
               {(() => {
                 const lastOutput = nodeResults[nodeResults.length - 1].output!;
@@ -366,7 +363,7 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
         )}
 
         {/* 日志区域 */}
-        <div className="p-4 bg-gray-50 flex-1 flex flex-col">
+        <div className="p-4 bg-cyber-gray flex-1 flex flex-col">
           <Card title="执行日志" size="small" className="flex-1 flex flex-col">
             <div
               ref={logContainerRef}
@@ -375,12 +372,12 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
               <Timeline
                 items={logs.map((log, index) => ({
                   key: index,
-                  children: <span className="text-xs font-mono">{log}</span>,
-                  color: log.includes('❌') ? 'red' : log.includes('✅') ? 'green' : 'blue',
+                  children: <span className="text-xs font-mono text-cyber-cyan">{log}</span>,
+                  color: log.includes('❌') ? '#ff2d95' : log.includes('✅') ? '#39ff14' : '#00f5ff',
                 }))}
               />
               {logs.length === 0 && (
-                <div className="text-gray-400 text-center py-4">暂无日志</div>
+                <div className="text-cyber-pink/60 text-center py-4">暂无日志</div>
               )}
             </div>
           </Card>

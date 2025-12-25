@@ -1,7 +1,640 @@
 @import "tailwindcss";
 
+/* Tailwind v4 自定义主题配置 */
+@theme {
+  /* 自定义颜色 */
+  --color-cyber-black: #0a0a0f;
+  --color-cyber-dark: #12121a;
+  --color-cyber-gray: #1a1a2e;
+  --color-cyber-purple: #b026ff;
+  --color-cyber-pink: #ff2d95;
+  --color-cyber-cyan: #00f5ff;
+  --color-cyber-blue: #4d4dff;
+  --color-cyber-green: #39ff14;
+  --color-cyber-yellow: #ffff00;
+
+  /* 自定义阴影 */
+  --shadow-neon-purple: 0 0 5px #b026ff, 0 0 10px #b026ff, 0 0 20px #b026ff;
+  --shadow-neon-pink: 0 0 5px #ff2d95, 0 0 10px #ff2d95, 0 0 20px #ff2d95;
+  --shadow-neon-cyan: 0 0 5px #00f5ff, 0 0 10px #00f5ff, 0 0 20px #00f5ff;
+  --shadow-neon-blue: 0 0 5px #4d4dff, 0 0 10px #4d4dff, 0 0 20px #4d4dff;
+  --shadow-neon-green: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14;
+
+  /* 自定义动画 */
+  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite alternate;
+  --animate-flicker: flicker 3s linear infinite;
+
+  /* 自定义间距 */
+  --spacing-0_25: 0.0625rem;
+  --spacing-0_5: 0.125rem;
+  --spacing-1: 0.25rem;
+  --spacing-1_5: 0.375rem;
+  --spacing-2: 0.5rem;
+  --spacing-2_5: 0.625rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+}
+
+/* 动画关键帧 */
+@keyframes glow-pulse {
+  0% { filter: brightness(1); }
+  100% { filter: brightness(1.3); }
+}
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.8; }
+}
+
+/* 全局重置样式 */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #1a1a2e 100%);
+  color: #e0e0e0;
+  font-family: 'Courier New', 'Monaco', 'Consolas', monospace;
+  overflow-x: hidden;
+
+  /* 覆盖 Ant Design v5 全局 CSS 变量 */
+  --ant-color-bg-container: rgba(10, 10, 15, 0.8) !important;
+  --ant-color-bg-elevated: rgba(18, 18, 26, 0.98) !important;
+  --ant-color-bg-spotlight: rgba(176, 38, 255, 0.1) !important;
+  --ant-color-border: rgba(176, 38, 255, 0.3) !important;
+  --ant-color-border-secondary: rgba(176, 38, 255, 0.15) !important;
+  --ant-color-text: rgba(224, 224, 224, 1) !important;
+  --ant-color-text-secondary: rgba(224, 224, 224, 0.6) !important;
+  --ant-color-text-tertiary: rgba(224, 224, 224, 0.4) !important;
+  --ant-color-primary: #b026ff !important;
+  --ant-color-primary-hover: #00f5ff !important;
+  --ant-color-primary-active: #ff2d95 !important;
+}
+
+/* ==================== 滚动条样式 ==================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #12121a;
+  border: 1px solid #b026ff;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #b026ff 0%, #ff2d95 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ff2d95 0%, #00f5ff 100%);
+}
+
+/* ==================== Ant Design 主题覆盖 ==================== */
+
+/* Layout */
+.ant-layout {
+  background: transparent !important;
+}
+
+.ant-layout-sider {
+  background: rgba(26, 26, 46, 0.95) !important;
+  border-right: 2px solid #b026ff !important;
+  box-shadow: 0 0 20px rgba(176, 38, 255, 0.3) !important;
+}
+
+/* Menu */
+.ant-menu {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-menu-item {
+  color: #e0e0e0 !important;
+  border-radius: 4px !important;
+  margin: 4px 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-menu-item:hover {
+  background: rgba(176, 38, 255, 0.2) !important;
+  color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.5) !important;
+}
+
+.ant-menu-item-selected {
+  background: linear-gradient(90deg, rgba(176, 38, 255, 0.3) 0%, rgba(255, 45, 149, 0.3) 100%) !important;
+  color: #ff2d95 !important;
+  border-left: 3px solid #ff2d95 !important;
+  box-shadow: 0 0 15px rgba(255, 45, 149, 0.5) !important;
+}
+
+/* Buttons */
+.ant-btn-primary {
+  background: linear-gradient(135deg, #b026ff 0%, #ff2d95 100%) !important;
+  border: none !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(176, 38, 255, 0.5), 0 0 20px rgba(255, 45, 149, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-btn-primary:hover {
+  box-shadow: 0 0 15px rgba(176, 38, 255, 0.8), 0 0 30px rgba(255, 45, 149, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+.ant-btn-default {
+  background: rgba(10, 10, 15, 0.8) !important;
+  border: 1px solid rgba(176, 38, 255, 0.5) !important;
+  color: #00f5ff !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-btn-default:hover {
+  background: rgba(176, 38, 255, 0.2) !important;
+  border-color: #00f5ff !important;
+  color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.5) !important;
+}
+
+.ant-btn-dashed {
+  background: rgba(10, 10, 15, 0.6) !important;
+  border: 1px dashed rgba(176, 38, 255, 0.5) !important;
+  color: #b026ff !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-btn-dashed:hover {
+  background: rgba(176, 38, 255, 0.15) !important;
+  border-color: #00f5ff !important;
+  color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.4) !important;
+}
+
+.ant-btn-text,
+.ant-btn-link {
+  background: transparent !important;
+  color: #00f5ff !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-btn-text:hover,
+.ant-btn-link:hover {
+  color: #ff2d95 !important;
+  text-shadow: 0 0 10px rgba(255, 45, 149, 0.6) !important;
+}
+
+.ant-btn .anticon {
+  color: inherit !important;
+}
+
+/* Card */
+.ant-card {
+  background: rgba(26, 26, 46, 0.9) !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+  box-shadow: 0 0 15px rgba(176, 38, 255, 0.2) !important;
+}
+
+.ant-card-head {
+  background: rgba(18, 18, 26, 0.95) !important;
+  border-bottom: 1px solid rgba(176, 38, 255, 0.3) !important;
+}
+
+.ant-card-head-title {
+  color: #00f5ff !important;
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.8) !important;
+}
+
+/* Input */
+.ant-input,
+.ant-input-textarea {
+  background: rgba(10, 10, 15, 0.8) !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+  color: #e0e0e0 !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-input:hover,
+.ant-input-textarea:hover {
+  border-color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
+}
+
+.ant-input:focus,
+.ant-input-textarea:focus {
+  border-color: #ff2d95 !important;
+  box-shadow: 0 0 15px rgba(255, 45, 149, 0.5) !important;
+}
+
+/* Input Password */
+.ant-input-password {
+  background: rgba(10, 10, 15, 0.8) !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+}
+
+.ant-input-password .ant-input {
+  background: transparent !important;
+  border: none !important;
+  color: #e0e0e0 !important;
+}
+
+.ant-input-password:hover {
+  border-color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
+}
+
+.ant-input-password-focused,
+.ant-input-password:focus,
+.ant-input-password:focus-within {
+  border-color: #ff2d95 !important;
+  box-shadow: 0 0 15px rgba(255, 45, 149, 0.5) !important;
+}
+
+.ant-input-password-icon {
+  color: #00f5ff !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-input-password-icon:hover {
+  color: #ff2d95 !important;
+  text-shadow: 0 0 10px rgba(255, 45, 149, 0.6) !important;
+}
+
+/* Input Number */
+.ant-input-number {
+  background: rgba(10, 10, 15, 0.8) !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+}
+
+.ant-input-number:hover {
+  border-color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
+}
+
+.ant-input-number-focused {
+  border-color: #ff2d95 !important;
+  box-shadow: 0 0 15px rgba(255, 45, 149, 0.5) !important;
+}
+
+.ant-input-number input {
+  background: transparent !important;
+  color: #e0e0e0 !important;
+}
+
+.ant-input-number-handler {
+  background: rgba(18, 18, 26, 0.8) !important;
+  border-left: 1px solid rgba(176, 38, 255, 0.3) !important;
+  color: #00f5ff !important;
+}
+
+.ant-input-number-handler:hover {
+  background: rgba(176, 38, 255, 0.2) !important;
+  color: #ff2d95 !important;
+}
+
+.ant-input-number-handler-wrap {
+  background: rgba(18, 18, 26, 0.8) !important;
+}
+
+/* Form */
+.ant-form-item-label > label {
+  --ant-form-label-color: #00f5ff !important;
+  color: #00f5ff !important;
+  text-shadow: 0 0 5px rgba(0, 245, 255, 0.5) !important;
+}
+
+.ant-form-item-explain-error {
+  color: #ff2d95 !important;
+}
+
+/* Select */
+.ant-select {
+  --select-background: rgba(10, 10, 15, 0.8) !important;
+  --ant-color-bg-container: rgba(10, 10, 15, 0.8) !important;
+  --ant-color-bg-elevated: rgba(18, 18, 26, 0.98) !important;
+  --ant-color-border: rgba(176, 38, 255, 0.3) !important;
+  --select-border-color: var(--ant-color-border);
+}
+
+/* Select v5 新结构 */
+.ant-select-content {
+  background-color: rgba(10, 10, 15, 0.8) !important;
+  color: #e0e0e0 !important;
+  transition: all 0.3s ease !important;
+  border-radius: 4px !important;
+}
+
+.ant-select:hover .ant-select-content {
+  border-color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
+}
+
+.ant-select-focused .ant-select-content,
+.ant-select-open .ant-select-content {
+  border-color: #ff2d95 !important;
+  box-shadow: 0 0 15px rgba(255, 45, 149, 0.5) !important;
+}
+
+.ant-select-content-value {
+  color: #e0e0e0 !important;
+}
+
+.ant-select-input {
+  color: #e0e0e0 !important;
+  background: transparent !important;
+  caret-color: #00f5ff !important;
+}
+
+/* Select placeholder 统一样式 */
+.ant-select-input::placeholder,
+.ant-select-selection-placeholder,
+.ant-select-single .ant-select-selector .ant-select-selection-placeholder {
+  color: rgba(224, 224, 224, 0.4) !important;
+}
+
+/* Select 后缀图标 */
+.ant-select-suffix,
+.ant-select-arrow {
+  color: #00f5ff !important;
+}
+
+/* Select 旧版本兼容 */
+.ant-select-selector {
+  background: rgba(10, 10, 15, 0.8) !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+  color: #e0e0e0 !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-select:hover .ant-select-selector {
+  border-color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
+}
+
+.ant-select-focused .ant-select-selector,
+.ant-select-open .ant-select-selector {
+  border-color: #ff2d95 !important;
+  box-shadow: 0 0 15px rgba(255, 45, 149, 0.5) !important;
+}
+
+.ant-select-single .ant-select-selector {
+  background: rgba(10, 10, 15, 0.8) !important;
+}
+
+.ant-select-selection-item {
+  color: #e0e0e0 !important;
+  background: transparent !important;
+}
+
+.ant-select-show-search .ant-select-selector {
+  background: rgba(10, 10, 15, 0.8) !important;
+}
+
+.ant-select-show-search .ant-select-selection-search {
+  color: #e0e0e0 !important;
+}
+
+.ant-select-selection-search-input {
+  color: #e0e0e0 !important;
+  background: transparent !important;
+}
+
+/* Select 下拉菜单 */
+.ant-select-dropdown {
+  background: rgba(18, 18, 26, 0.98) !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+  box-shadow: 0 0 20px rgba(176, 38, 255, 0.3) !important;
+}
+
+.ant-select-dropdown .ant-select-item,
+.ant-select-dropdown .ant-select-item-option {
+  color: #e0e0e0 !important;
+}
+
+.ant-select-dropdown .ant-select-item-option:hover,
+.ant-select-dropdown .ant-select-item-option-active {
+  background: rgba(176, 38, 255, 0.2) !important;
+  color: #00f5ff !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-selected {
+  background: rgba(255, 45, 149, 0.3) !important;
+  color: #ff2d95 !important;
+}
+
+/* Select 清除按钮 */
+.ant-select-clear {
+  color: #ff2d95 !important;
+  background: rgba(10, 10, 15, 0.8) !important;
+}
+
+.ant-select-clear:hover {
+  color: #ff2d95 !important;
+  background: rgba(255, 45, 149, 0.2) !important;
+}
+
+/* Select 多选 */
+.ant-select-multiple .ant-select-selection-item {
+  background: rgba(176, 38, 255, 0.2) !important;
+  border: 1px solid rgba(176, 38, 255, 0.4) !important;
+  color: #00f5ff !important;
+}
+
+.ant-select-selection-item-remove {
+  color: #ff2d95 !important;
+}
+
+.ant-select-selection-item-remove:hover {
+  color: #ff2d95 !important;
+}
+
+/* Checkbox */
+.ant-checkbox-wrapper {
+  color: #e0e0e0 !important;
+}
+
+.ant-checkbox-inner {
+  background: rgba(10, 10, 15, 0.8) !important;
+  border: 1px solid rgba(176, 38, 255, 0.5) !important;
+}
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  background: #b026ff !important;
+  border-color: #b026ff !important;
+}
+
+/* Drawer */
+.ant-drawer {
+  background: rgba(18, 18, 26, 0.98) !important;
+}
+
+.ant-drawer-header {
+  background: rgba(26, 26, 46, 0.95) !important;
+  border-bottom: 2px solid #b026ff !important;
+}
+
+.ant-drawer-title {
+  color: #00f5ff !important;
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.8) !important;
+}
+
+.ant-drawer-body {
+  background: transparent !important;
+}
+
+/* Timeline */
+.ant-timeline {
+  color: #e0e0e0 !important;
+}
+
+.ant-timeline-item-tail {
+  border-left-width: 2px !important;
+  border-left-style: solid !important;
+  background: linear-gradient(180deg, #b026ff 0%, #00f5ff 100%) !important;
+}
+
+/* Progress */
+.ant-progress-bg {
+  background: linear-gradient(90deg, #b026ff 0%, #00f5ff 50%, #39ff14 100%) !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.5) !important;
+}
+
+/* Tag */
+.ant-tag {
+  border: 1px solid rgba(176, 38, 255, 0.5) !important;
+}
+
+/* Collapse */
+.ant-collapse {
+  background: transparent !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+}
+
+.ant-collapse-header {
+  color: #00f5ff !important;
+  background: rgba(26, 26, 46, 0.8) !important;
+}
+
+.ant-collapse-content-box {
+  background: rgba(10, 10, 15, 0.5) !important;
+  border-top: 1px solid rgba(176, 38, 255, 0.3) !important;
+}
+
+/* ==================== 自定义效果类 ==================== */
+
+/* 霓虹灯文字效果 */
+.text-neon {
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 20px currentColor;
+}
+
+.text-glow {
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 10px currentColor;
+}
+
+/* 网格背景效果 */
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(176, 38, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(176, 38, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: -1px -1px;
+}
+
+/* 扫描线效果 */
+.scanline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 245, 255, 0.02) 51%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ==================== React Flow 样式 ==================== */
+
+.react-flow__node {
+  background: rgba(26, 26, 46, 0.95) !important;
+  border: 2px solid #b026ff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 10px rgba(176, 38, 255, 0.5) !important;
+  transition: all 0.3s ease !important;
+}
+
+.react-flow__node:hover {
+  border-color: #00f5ff !important;
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.8) !important;
+}
+
+.react-flow__node.selected {
+  border-color: #ff2d95 !important;
+  box-shadow: 0 0 25px rgba(255, 45, 149, 0.8) !important;
+}
+
+.react-flow__node-default .react-flow__handle {
+  background: #b026ff !important;
+  border: 2px solid #ff2d95 !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+
+.react-flow__edge-path {
+  stroke: #00f5ff !important;
+  stroke-width: 2 !important;
+  filter: drop-shadow(0 0 5px rgba(0, 245, 255, 0.8)) !important;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #ff2d95 !important;
+  filter: drop-shadow(0 0 10px rgba(255, 45, 149, 0.8)) !important;
+}
+
+.react-flow__controls-button {
+  background: rgba(26, 26, 46, 0.9) !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+  fill: #b026ff !important;
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(176, 38, 255, 0.2) !important;
+  border-color: #00f5ff !important;
+  fill: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.5) !important;
+}
+
+.react-flow__minimap {
+  background: rgba(26, 26, 46, 0.9) !important;
+  border: 1px solid rgba(176, 38, 255, 0.3) !important;
+}
+
+.react-flow__attribution {
+  background: rgba(26, 26, 46, 0.9) !important;
+  color: #00f5ff !important;
+  font-size: 10px !important;
 }

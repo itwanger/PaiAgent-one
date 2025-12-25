@@ -639,26 +639,27 @@ const EditorPage = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-cyber-black cyber-grid">
       {/* 顶部工具栏 */}
-      <div className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+      <div className="bg-cyber-dark/95 shadow-neon-purple px-6 py-4 flex items-center justify-between border-b-2 border-cyber-purple">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">PaiAgent</h1>
+          <h1 className="text-2xl font-bold text-cyber-cyan text-neon">PaiAgent</h1>
           <Input
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
             className="w-64"
             placeholder="工作流名称"
             bordered={false}
-            style={{ borderBottom: '2px solid #e5e7eb' }}
+            style={{ borderBottom: '2px solid #b026ff', color: '#e0e0e0' }}
           />
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Button
             icon={<PlusOutlined />}
             onClick={handleCreateNew}
             size="large"
+            className="border-cyber-purple text-cyber-purple hover:bg-cyber-purple/20"
           >
             新建
           </Button>
@@ -666,6 +667,7 @@ const EditorPage = () => {
             icon={<FolderOpenOutlined />}
             onClick={handleOpenLoadModal}
             size="large"
+            className="border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/20"
           >
             加载
           </Button>
@@ -687,12 +689,13 @@ const EditorPage = () => {
           >
             调试
           </Button>
-          <div className="ml-4 flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-lg">
-            <span className="text-gray-600">👤 {username}</span>
+          <div className="ml-4 flex items-center gap-2 px-3 py-1 bg-cyber-gray/30 rounded-lg border border-cyber-purple/20 border border-cyber-purple/50">
+            <span className="text-cyber-cyan">👤 {username}</span>
             <Button
               icon={<LogoutOutlined />}
               onClick={handleLogout}
               type="text"
+              className="text-cyber-pink hover:text-cyber-pink"
             >
               登出
             </Button>
@@ -703,28 +706,34 @@ const EditorPage = () => {
       {/* 主要内容区域 */}
       <div className="flex-1 flex overflow-hidden gap-4 p-4">
         {/* 左侧节点面板 */}
-        <div className="w-64 flex-shrink-0 bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="w-64 flex-shrink-0 bg-cyber-dark/95 rounded-lg shadow-neon-purple overflow-hidden border border-cyber-purple/30">
           <NodePanel onDragStart={handleDragStart} />
         </div>
 
         {/* 中间画布 */}
-        <div className="flex-1 bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="flex-1 bg-cyber-dark/95 rounded-lg shadow-neon-cyan overflow-hidden border border-cyber-cyan/30">
           <FlowCanvas onNodeClick={handleNodeClick} />
         </div>
 
         {/* 右侧配置面板 */}
-        <div className="w-[420px] flex-shrink-0 bg-white rounded-lg shadow-sm overflow-y-auto p-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">节点配置</h3>
-          {selectedNode ? (
-            <div>
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500 mb-1">节点 ID</p>
-                <p className="text-gray-700 font-medium">{selectedNode.id}</p>
-              </div>
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500 mb-1">节点类型</p>
-                <p className="text-gray-700 font-medium">{String(selectedNode.data?.type || '')}</p>
-              </div>
+        <div className="w-[420px] flex-shrink-0 bg-cyber-dark/95 rounded-lg shadow-neon-pink border border-cyber-pink/30 flex flex-col">
+          {/* 标题 */}
+          <div className="px-4 py-3 border-b border-cyber-pink/30 bg-cyber-dark/50">
+            <h3 className="font-semibold text-cyber-cyan text-glow text-base">节点配置</h3>
+          </div>
+
+          {/* 内容区 */}
+          <div className="flex-1 overflow-y-auto px-4 py-3">
+            {selectedNode ? (
+              <div>
+                <div className="mb-3 p-3 bg-cyber-gray/30 rounded-lg border border-cyber-purple/30">
+                  <p className="text-xs text-cyber-cyan mb-1 opacity-70">节点 ID</p>
+                  <p className="text-sm text-cyber-pink font-medium break-all">{selectedNode.id}</p>
+                </div>
+                <div className="mb-4 p-3 bg-cyber-gray/30 rounded-lg border border-cyber-purple/30">
+                  <p className="text-xs text-cyber-cyan mb-1 opacity-70">节点类型</p>
+                  <p className="text-sm text-cyber-pink font-medium">{String(selectedNode.data?.type || '')}</p>
+                </div>
                 
                 {/* 输入节点配置 */}
                 {selectedNode.data?.type === 'input' && (
@@ -748,9 +757,9 @@ const EditorPage = () => {
                 {selectedNode.data?.type === 'output' && (
                   <Form layout="vertical" className="mt-4">
                     {/* 输出配置 */}
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="font-medium text-gray-700">输出配置</label>
+                    <div className="mb-5">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="font-medium text-cyber-cyan text-sm">输出配置</label>
                         <Button 
                           type="dashed" 
                           size="small" 
@@ -814,7 +823,7 @@ const EditorPage = () => {
                       ))}
                       
                       {outputParams.length === 0 && (
-                        <div className="text-gray-400 text-center py-4 border border-dashed border-gray-300 rounded">
+                        <div className="text-cyber-pink/60 text-center py-8 border border-dashed border-cyber-purple/50 rounded">
                           点击"添加"按钮添加输出参数
                         </div>
                       )}
@@ -828,7 +837,7 @@ const EditorPage = () => {
                         value={responseContent}
                         onChange={(e) => setResponseContent(e.target.value)}
                       />
-                      <div className="mt-2 text-xs text-gray-500">
+                      <div className="mt-1 text-xs text-cyber-pink/50">
                         💡 提示: 使用 {'{{'} 参数名 {'}'} 引用上面定义的参数
                       </div>
                     </Form.Item>
@@ -843,9 +852,9 @@ const EditorPage = () => {
                 {(selectedNode.data?.type === 'openai' || selectedNode.data?.type === 'deepseek' || selectedNode.data?.type === 'qwen' || selectedNode.data?.type === 'zhipu') && (
                   <Form layout="vertical" className="mt-4">
                     {/* 输入参数配置 */}
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="font-medium text-gray-700">输入参数</label>
+                    <div className="mb-5">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="font-medium text-cyber-cyan text-sm">输入参数</label>
                         <Button 
                           type="dashed" 
                           size="small" 
@@ -905,16 +914,16 @@ const EditorPage = () => {
                       ))}
                       
                       {llmInputParams.length === 0 && (
-                        <div className="text-gray-400 text-center py-4 border border-dashed border-gray-300 rounded">
+                        <div className="text-cyber-pink/60 text-center py-8 border border-dashed border-cyber-purple/50 rounded">
                           点击"添加"按钮添加输入参数
                         </div>
                       )}
                     </div>
 
                     {/* 输出参数配置 */}
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="font-medium text-gray-700">输出参数</label>
+                    <div className="mb-5">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="font-medium text-cyber-cyan text-sm">输出参数</label>
                         <Button 
                           type="dashed" 
                           size="small" 
@@ -956,7 +965,7 @@ const EditorPage = () => {
                       ))}
                       
                       {llmOutputParams.length === 0 && (
-                        <div className="text-gray-400 text-center py-4 border border-dashed border-gray-300 rounded">
+                        <div className="text-cyber-pink/60 text-center py-8 border border-dashed border-cyber-purple/50 rounded">
                           点击"添加"按钮添加输出参数
                         </div>
                       )}
@@ -970,7 +979,7 @@ const EditorPage = () => {
                         onChange={(e) => setLlmConfig({...llmConfig, prompt: e.target.value})}
                         style={{ fontFamily: 'monospace', fontSize: '12px' }}
                       />
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-cyber-pink/50 mt-1">
                         💡 使用 {'{{'} 参数名 {'}'} 引用上面定义的输入参数
                       </div>
                     </Form.Item>
@@ -1004,7 +1013,7 @@ const EditorPage = () => {
                         value={llmConfig.temperature}
                         onChange={(e) => setLlmConfig({...llmConfig, temperature: parseFloat(e.target.value) || 0.7})}
                       />
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-cyber-pink/50 mt-1">
                         控制输出随机性，范围 0-2，值越高越随机
                       </div>
                     </Form.Item>
@@ -1017,7 +1026,7 @@ const EditorPage = () => {
                         value={llmConfig.maxTokens}
                         onChange={(e) => setLlmConfig({...llmConfig, maxTokens: parseInt(e.target.value) || 2048})}
                       />
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-cyber-pink/50 mt-1">
                         限制输出最大 token 数，默认 2048
                       </div>
                     </Form.Item>
@@ -1028,7 +1037,7 @@ const EditorPage = () => {
                       >
                         启用流式响应（速度更快）
                       </Checkbox>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-cyber-pink/50 mt-1">
                         启用后会更快返回结果，数据逐块生成
                       </div>
                     </Form.Item>
@@ -1042,9 +1051,9 @@ const EditorPage = () => {
                 {selectedNode.data?.type === 'tts' && (
                   <Form layout="vertical" className="mt-4">
                     {/* 输入配置 */}
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="font-medium text-gray-700">输入配置</label>
+                    <div className="mb-5">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="font-medium text-cyber-cyan text-sm">输入配置</label>
                         <Button 
                           type="dashed" 
                           size="small" 
@@ -1056,7 +1065,7 @@ const EditorPage = () => {
                       </div>
                       
                       {ttsInputParams.map((param, index) => (
-                        <div key={index} className="mb-4 p-3 bg-gray-50 rounded">
+                        <div key={index} className="mb-3 p-3 bg-cyber-gray/30 rounded-lg border border-cyber-purple/30">
                           <div className="flex items-center gap-2 mb-2">
                             <Input 
                               placeholder="参数名 (如: text)"
@@ -1106,7 +1115,7 @@ const EditorPage = () => {
                       ))}
                       
                       {ttsInputParams.length === 0 && (
-                        <div className="text-center py-4 text-gray-400 text-sm border border-dashed rounded">
+                        <div className="text-center py-8 text-cyber-pink/60 text-sm border border-dashed border-cyber-purple/30 rounded">
                           暂无输入参数,点击"添加"按钮创建 text 参数
                         </div>
                       )}
@@ -1148,9 +1157,9 @@ const EditorPage = () => {
                     </div>
 
                     {/* 输出配置 */}
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="font-medium text-gray-700">输出配置</label>
+                    <div className="mb-5">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="font-medium text-cyber-cyan text-sm">输出配置</label>
                         <Button 
                           type="dashed" 
                           size="small" 
@@ -1185,7 +1194,7 @@ const EditorPage = () => {
                       ))}
                       
                       {ttsOutputParams.length === 0 && (
-                        <div className="text-center py-4 text-gray-400 text-sm border border-dashed rounded">
+                        <div className="text-center py-8 text-cyber-pink/60 text-sm border border-dashed border-cyber-purple/30 rounded">
                           暂无输出参数,点击"添加"按钮创建 voice_url 参数
                         </div>
                       )}
@@ -1193,7 +1202,7 @@ const EditorPage = () => {
 
                     {/* 基本信息 */}
                     <div className="mb-4">
-                      <label className="font-medium text-gray-700 block mb-3">基本信息</label>
+                      <label className="font-medium text-cyber-cyan block mb-3">基本信息</label>
                       <Form.Item label="API Key">
                         <Input.Password
                           placeholder="请输入阿里百炼 API Key"
@@ -1224,16 +1233,17 @@ const EditorPage = () => {
                  selectedNode.data?.type !== 'qwen' &&
                  selectedNode.data?.type !== 'zhipu' &&
                  selectedNode.data?.type !== 'tts' && (
-                  <div className="mt-4 text-center text-gray-400 text-sm">
+                  <div className="mt-4 text-center text-cyber-pink/60 text-sm">
                     该节点暂无可配置项
                   </div>
                 )}
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-400 text-sm">请选择一个节点</p>
+                <p className="text-cyber-pink/60 text-sm">请选择一个节点</p>
               </div>
             )}
+          </div>
         </div>
       </div>
 
