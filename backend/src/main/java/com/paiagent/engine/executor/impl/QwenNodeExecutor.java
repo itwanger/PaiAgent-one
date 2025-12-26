@@ -29,10 +29,10 @@ public class QwenNodeExecutor implements NodeExecutor {
     public Map<String, Object> execute(WorkflowNode node, Map<String, Object> input) throws Exception {
         Map<String, Object> data = node.getData();
         
-        // 获取配置
-        String apiUrl = (String) data.get("apiUrl");
-        String apiKey = (String) data.get("apiKey");
-        String model = (String) data.get("model");
+        // 获取配置并 trim 去除空格
+        String apiUrl = data.get("apiUrl") != null ? ((String) data.get("apiUrl")).trim() : null;
+        String apiKey = data.get("apiKey") != null ? ((String) data.get("apiKey")).trim() : null;
+        String model = data.get("model") != null ? ((String) data.get("model")).trim() : null;
         Double temperature = data.get("temperature") != null ? ((Number) data.get("temperature")).doubleValue() : 0.7;
         String promptTemplate = (String) data.get("prompt");
         
@@ -109,34 +109,28 @@ public class QwenNodeExecutor implements NodeExecutor {
         log.info("请求 Qwen API: {}", apiUrl);
         log.info("请求体: {}", requestBody.toJSONString());
         
+        ResponseEntity<String> response = restTemplate.postForEntity(
+            apiUrl,
+            entity,
+            String.class
+        );
+        
+        log.info("API 响应状态码: {}", response.getStatusCode());
+        log.info("API 响应内容: {}", response.getBody());
+        
+        JSONObject responseJson = JSON.parseObject(response.getBody());
+        JSONArray choices = responseJson.getJSONArray("choices");
         String apiResponse;
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                apiUrl,
-                entity,
-                String.class
-            );
-            
-            log.info("API 响应状态码: {}", response.getStatusCode());
-            log.info("API 响应内容: {}", response.getBody());
-            
-            JSONObject responseJson = JSON.parseObject(response.getBody());
-            JSONArray choices = responseJson.getJSONArray("choices");
-            if (choices != null && !choices.isEmpty()) {
-                JSONObject firstChoice = choices.getJSONObject(0);
-                JSONObject messageObj = firstChoice.getJSONObject("message");
-                apiResponse = messageObj.getString("content");
-            } else {
-                apiResponse = "API 返回格式异常: " + response.getBody();
-            }
-        } catch (Exception e) {
-            log.error("调用 Qwen API 失败", e);
-            apiResponse = "调用 API 失败: " + e.getMessage();
+        if (choices != null && !choices.isEmpty()) {
+            JSONObject firstChoice = choices.getJSONObject(0);
+            JSONObject messageObj = firstChoice.getJSONObject("message");
+            apiResponse = messageObj.getString("content");
+        } else {
+            throw new RuntimeException("API 返回格式异常: " + response.getBody());
         }
         
         Map<String, Object> output = new HashMap<>();
         
-        // 根据输出参数配置返回结果
         List<Map<String, Object>> outputParams = (List<Map<String, Object>>) data.get("outputParams");
         if (outputParams != null && !outputParams.isEmpty()) {
             for (Map<String, Object> param : outputParams) {

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -79,9 +80,23 @@ public class MinioService {
         
         URL url = new URL(fileUrl);
         try (InputStream inputStream = url.openStream()) {
-            // 获取文件大小
             long size = url.openConnection().getContentLengthLong();
             return uploadFile(objectName, inputStream, contentType, size);
+        }
+    }
+    
+    /**
+     * 从字节数组上传到 MinIO
+     * @param data 字节数组
+     * @param objectName 对象名称
+     * @param contentType 文件类型
+     * @return MinIO 公共 URL
+     */
+    public String uploadFromBytes(byte[] data, String objectName, String contentType) throws Exception {
+        log.info("从字节数组上传文件到 MinIO: {}, 大小: {} bytes", objectName, data.length);
+        
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
+            return uploadFile(objectName, inputStream, contentType, data.length);
         }
     }
 }

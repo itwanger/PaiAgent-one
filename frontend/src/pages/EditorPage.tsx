@@ -755,7 +755,7 @@ const EditorPage = () => {
                       </div>
                       
                       {outputParams.map((param, index) => (
-                        <Space key={index} className="w-full mb-3" align="start">
+                        <div key={index} className="flex items-start gap-2 mb-3">
                           <div>
                             <Input 
                               placeholder="参数名"
@@ -803,7 +803,7 @@ const EditorPage = () => {
                             icon={<DeleteOutlined />}
                             onClick={() => handleRemoveOutputParam(index)}
                           />
-                        </Space>
+                        </div>
                       ))}
                       
                       {outputParams.length === 0 && (
