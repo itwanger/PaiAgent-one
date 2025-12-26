@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -74,57 +75,76 @@ public class TTSNodeExecutor implements NodeExecutor {
         List<byte[]> audioChunks = new ArrayList<>();
         MultiModalConversation conv = new MultiModalConversation();
         
+        List<CompletableFuture<byte[]>> futures = new ArrayList<>();
+        
         for (int i = 0; i < textChunks.size(); i++) {
-            String chunk = textChunks.get(i);
-            int utf8ByteLength = chunk.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
-            log.info("处理第 {}/{} 个片段, 字符数: {}, UTF-8 字节数: {}", 
-                    i + 1, textChunks.size(), chunk.length(), utf8ByteLength);
+            final int chunkIndex = i;
+            final String chunk = textChunks.get(i);
             
-            if (progressCallback != null) {
-                Map<String, Object> progressData = new HashMap<>();
-                progressData.put("totalChunks", textChunks.size());
-                progressData.put("currentChunk", i + 1);
-                progressData.put("chunkText", chunk.substring(0, Math.min(50, chunk.length())) + "...");
-                progressCallback.accept(ExecutionEvent.nodeProgress(
-                    node.getId(), 
-                    node.getType(), 
-                    "正在处理第 " + (i + 1) + "/" + textChunks.size() + " 个片段", 
-                    progressData
-                ));
-            }
+            CompletableFuture<byte[]> future = CompletableFuture.supplyAsync(() -> {
+                try {
+                    int utf8ByteLength = chunk.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+                    log.info("处理第 {}/{} 个片段, 字符数: {}, UTF-8 字节数: {}", 
+                            chunkIndex + 1, textChunks.size(), chunk.length(), utf8ByteLength);
+                    
+                    if (progressCallback != null) {
+                        Map<String, Object> progressData = new HashMap<>();
+                        progressData.put("totalChunks", textChunks.size());
+                        progressData.put("currentChunk", chunkIndex + 1);
+                        progressData.put("chunkText", chunk.substring(0, Math.min(50, chunk.length())) + "...");
+                        progressCallback.accept(ExecutionEvent.nodeProgress(
+                            node.getId(), 
+                            node.getType(), 
+                            "正在处理第 " + (chunkIndex + 1) + "/" + textChunks.size() + " 个片段", 
+                            progressData
+                        ));
+                    }
+                    
+                    MultiModalConversationParam param = MultiModalConversationParam.builder()
+                            .apiKey(apiKey)
+                            .model(model)
+                            .text(chunk)
+                            .voice(voice)
+                            .languageType(languageType)
+                            .build();
+                    
+                    MultiModalConversationResult result = conv.call(param);
+                    String audioUrl = result.getOutput().getAudio().getUrl();
+                    
+                    if (!StringUtils.hasText(audioUrl)) {
+                        throw new RuntimeException("阿里百炼 TTS 返回的音频URL为空 (片段 " + (chunkIndex + 1) + ")");
+                    }
+                    
+                    log.info("第 {}/{} 个片段音频URL: {}", chunkIndex + 1, textChunks.size(), audioUrl);
+                    
+                    byte[] audioData = downloadAudio(audioUrl);
+                    
+                    if (progressCallback != null) {
+                        Map<String, Object> progressData = new HashMap<>();
+                        progressData.put("totalChunks", textChunks.size());
+                        progressData.put("currentChunk", chunkIndex + 1);
+                        progressData.put("completedChunks", chunkIndex + 1);
+                        progressCallback.accept(ExecutionEvent.nodeProgress(
+                            node.getId(), 
+                            node.getType(), 
+                            "已完成第 " + (chunkIndex + 1) + "/" + textChunks.size() + " 个片段", 
+                            progressData
+                        ));
+                    }
+                    
+                    return audioData;
+                } catch (Exception e) {
+                    throw new RuntimeException("处理第 " + (chunkIndex + 1) + " 个片段失败: " + e.getMessage(), e);
+                }
+            });
             
-            MultiModalConversationParam param = MultiModalConversationParam.builder()
-                    .apiKey(apiKey)
-                    .model(model)
-                    .text(chunk)
-                    .voice(voice)
-                    .languageType(languageType)
-                    .build();
-            
-            MultiModalConversationResult result = conv.call(param);
-            String audioUrl = result.getOutput().getAudio().getUrl();
-            
-            if (!StringUtils.hasText(audioUrl)) {
-                throw new RuntimeException("阿里百炼 TTS 返回的音频URL为空 (片段 " + (i + 1) + ")");
-            }
-            
-            log.info("第 {}/{} 个片段音频URL: {}", i + 1, textChunks.size(), audioUrl);
-            
-            byte[] audioData = downloadAudio(audioUrl);
-            audioChunks.add(audioData);
-            
-            if (progressCallback != null) {
-                Map<String, Object> progressData = new HashMap<>();
-                progressData.put("totalChunks", textChunks.size());
-                progressData.put("currentChunk", i + 1);
-                progressData.put("completedChunks", i + 1);
-                progressCallback.accept(ExecutionEvent.nodeProgress(
-                    node.getId(), 
-                    node.getType(), 
-                    "已完成第 " + (i + 1) + "/" + textChunks.size() + " 个片段", 
-                    progressData
-                ));
-            }
+            futures.add(future);
+        }
+        
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        
+        for (CompletableFuture<byte[]> future : futures) {
+            audioChunks.add(future.get());
         }
         
         if (progressCallback != null) {
