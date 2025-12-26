@@ -113,6 +113,17 @@ const DebugDrawer = ({ open, onClose, onExecute }: DebugDrawerProps) => {
               }
               break;
               
+            case 'NODE_PROGRESS':
+              if (event.nodeId && event.message) {
+                addLog(`📊 ${event.message}`);
+                const existingNode = tempNodeStatusMap.get(event.nodeId);
+                if (existingNode) {
+                  existingNode.status = 'RUNNING';
+                  setNodeStatusMap(new Map(tempNodeStatusMap));
+                }
+              }
+              break;
+              
             case 'NODE_ERROR':
               if (event.nodeId && event.nodeName) {
                 addLog(`❌ 节点 [${event.nodeName}] 执行失败: ${event.message}`);

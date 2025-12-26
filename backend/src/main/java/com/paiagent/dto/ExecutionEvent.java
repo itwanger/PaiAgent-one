@@ -64,4 +64,16 @@ public class ExecutionEvent {
         event.setTimestamp(System.currentTimeMillis());
         return event;
     }
+    
+    public static ExecutionEvent nodeProgress(String nodeId, String nodeName, String message, Object data) {
+        ExecutionEvent event = new ExecutionEvent();
+        event.setEventType("NODE_PROGRESS");
+        event.setNodeId(nodeId);
+        event.setNodeName(nodeName);
+        event.setStatus("RUNNING");
+        event.setMessage(message);
+        event.setData(data);
+        event.setTimestamp(System.currentTimeMillis());
+        return event;
+    }
 }

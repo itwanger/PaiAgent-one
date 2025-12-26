@@ -75,7 +75,7 @@ public class WorkflowEngine {
                 
                 try {
                     NodeExecutor executor = executorFactory.getExecutor(node.getType());
-                    Map<String, Object> output = executor.execute(node, currentInput);
+                    Map<String, Object> output = executor.execute(node, currentInput, eventCallback);
                     
                     nodeOutputs.put(node.getId(), output);
                     

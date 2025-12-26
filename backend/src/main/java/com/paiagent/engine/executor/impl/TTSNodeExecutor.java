@@ -4,6 +4,7 @@ import com.alibaba.dashscope.aigc.multimodalconversation.AudioParameters;
 import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversation;
 import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam;
 import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationResult;
+import com.paiagent.dto.ExecutionEvent;
 import com.paiagent.engine.executor.NodeExecutor;
 import com.paiagent.engine.model.WorkflowNode;
 import com.paiagent.service.MinioService;
@@ -17,6 +18,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Consumer;
 
 @Slf4j
 @Component
@@ -29,6 +31,11 @@ public class TTSNodeExecutor implements NodeExecutor {
     
     @Override
     public Map<String, Object> execute(WorkflowNode node, Map<String, Object> input) throws Exception {
+        return execute(node, input, null);
+    }
+    
+    @Override
+    public Map<String, Object> execute(WorkflowNode node, Map<String, Object> input, Consumer<ExecutionEvent> progressCallback) throws Exception {
         String text = extractInputText(node, input);
         if (!StringUtils.hasText(text)) {
             throw new IllegalArgumentException("输入文本不能为空");
@@ -52,6 +59,18 @@ public class TTSNodeExecutor implements NodeExecutor {
         List<String> textChunks = splitText(text, MAX_TTS_INPUT_LENGTH);
         log.info("文本分割为 {} 个片段", textChunks.size());
         
+        if (progressCallback != null) {
+            Map<String, Object> progressData = new HashMap<>();
+            progressData.put("totalChunks", textChunks.size());
+            progressData.put("currentChunk", 0);
+            progressCallback.accept(ExecutionEvent.nodeProgress(
+                node.getId(), 
+                node.getType(), 
+                "文本已分割为 " + textChunks.size() + " 个片段", 
+                progressData
+            ));
+        }
+        
         List<byte[]> audioChunks = new ArrayList<>();
         MultiModalConversation conv = new MultiModalConversation();
         
@@ -60,6 +79,19 @@ public class TTSNodeExecutor implements NodeExecutor {
             int utf8ByteLength = chunk.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
             log.info("处理第 {}/{} 个片段, 字符数: {}, UTF-8 字节数: {}", 
                     i + 1, textChunks.size(), chunk.length(), utf8ByteLength);
+            
+            if (progressCallback != null) {
+                Map<String, Object> progressData = new HashMap<>();
+                progressData.put("totalChunks", textChunks.size());
+                progressData.put("currentChunk", i + 1);
+                progressData.put("chunkText", chunk.substring(0, Math.min(50, chunk.length())) + "...");
+                progressCallback.accept(ExecutionEvent.nodeProgress(
+                    node.getId(), 
+                    node.getType(), 
+                    "正在处理第 " + (i + 1) + "/" + textChunks.size() + " 个片段", 
+                    progressData
+                ));
+            }
             
             MultiModalConversationParam param = MultiModalConversationParam.builder()
                     .apiKey(apiKey)
@@ -80,6 +112,28 @@ public class TTSNodeExecutor implements NodeExecutor {
             
             byte[] audioData = downloadAudio(audioUrl);
             audioChunks.add(audioData);
+            
+            if (progressCallback != null) {
+                Map<String, Object> progressData = new HashMap<>();
+                progressData.put("totalChunks", textChunks.size());
+                progressData.put("currentChunk", i + 1);
+                progressData.put("completedChunks", i + 1);
+                progressCallback.accept(ExecutionEvent.nodeProgress(
+                    node.getId(), 
+                    node.getType(), 
+                    "已完成第 " + (i + 1) + "/" + textChunks.size() + " 个片段", 
+                    progressData
+                ));
+            }
+        }
+        
+        if (progressCallback != null) {
+            progressCallback.accept(ExecutionEvent.nodeProgress(
+                node.getId(), 
+                node.getType(), 
+                "正在合并 " + audioChunks.size() + " 个音频片段...", 
+                null
+            ));
         }
         
         byte[] mergedAudio = mergeWavFiles(audioChunks);
