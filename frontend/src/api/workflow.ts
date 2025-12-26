@@ -80,3 +80,90 @@ export const deleteWorkflow = (id: number): Promise<ApiResult<void>> => {
 export const executeWorkflow = (id: number, inputData: string): Promise<ApiResult<any>> => {
   return api.post(`/api/workflows/${id}/execute`, { inputData });
 };
+
+export interface ExecutionEvent {
+  eventType: string;
+  nodeId?: string;
+  nodeName?: string;
+  status?: string;
+  message?: string;
+  data?: any;
+  timestamp?: number;
+}
+
+export const executeWorkflowStream = (
+  id: number, 
+  inputData: string, 
+  onEvent: (event: ExecutionEvent) => void,
+  onComplete: () => void,
+  onError: (error: Error) => void
+) => {
+  const token = localStorage.getItem('token');
+  
+  if (!token) {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+    onError(new Error('未登录'));
+    return null;
+  }
+  
+  const url = `http://localhost:8080/api/workflows/${id}/execute/stream?inputData=${encodeURIComponent(inputData)}&token=${token}`;
+  
+  const eventSource = new EventSource(url);
+  
+  let hasReceivedData = false;
+  
+  eventSource.addEventListener('WORKFLOW_START', (e) => {
+    hasReceivedData = true;
+    const event = JSON.parse(e.data) as ExecutionEvent;
+    onEvent(event);
+  });
+  
+  eventSource.addEventListener('NODE_START', (e) => {
+    hasReceivedData = true;
+    const event = JSON.parse(e.data) as ExecutionEvent;
+    onEvent(event);
+  });
+  
+  eventSource.addEventListener('NODE_SUCCESS', (e) => {
+    hasReceivedData = true;
+    const event = JSON.parse(e.data) as ExecutionEvent;
+    onEvent(event);
+  });
+  
+  eventSource.addEventListener('NODE_ERROR', (e) => {
+    hasReceivedData = true;
+    const event = JSON.parse(e.data) as ExecutionEvent;
+    onEvent(event);
+  });
+  
+  eventSource.addEventListener('WORKFLOW_COMPLETE', (e) => {
+    hasReceivedData = true;
+    const event = JSON.parse(e.data) as ExecutionEvent;
+    onEvent(event);
+    eventSource.close();
+    onComplete();
+  });
+  
+  eventSource.addEventListener('ERROR', (e) => {
+    hasReceivedData = true;
+    const event = JSON.parse(e.data) as ExecutionEvent;
+    onEvent(event);
+    eventSource.close();
+    onError(new Error(event.message || '执行失败'));
+  });
+  
+  eventSource.onerror = (e) => {
+    eventSource.close();
+    
+    if (!hasReceivedData) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+      onError(new Error('认证失败,请重新登录'));
+    } else {
+      onError(new Error('连接中断'));
+    }
+  };
+  
+  return eventSource;
+};

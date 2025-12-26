@@ -1,6 +1,7 @@
 package com.paiagent.engine;
 
 import com.alibaba.fastjson2.JSON;
+import com.paiagent.dto.ExecutionEvent;
 import com.paiagent.dto.ExecutionResponse;
 import com.paiagent.engine.dag.DAGParser;
 import com.paiagent.engine.executor.NodeExecutor;
@@ -14,15 +15,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
-/**
- * 工作流执行引擎
- */
 @Slf4j
 @Service
 public class WorkflowEngine {
@@ -36,23 +34,19 @@ public class WorkflowEngine {
     @Autowired
     private ExecutionRecordMapper executionRecordMapper;
     
-    /**
-     * 执行工作流
-     */
     public ExecutionResponse execute(Workflow workflow, String inputData) {
+        return executeWithCallback(workflow, inputData, null);
+    }
+    
+    public ExecutionResponse executeWithCallback(Workflow workflow, String inputData, Consumer<ExecutionEvent> eventCallback) {
         long startTime = System.currentTimeMillis();
         
-        // 解析工作流配置
         WorkflowConfig config = JSON.parseObject(workflow.getFlowData(), WorkflowConfig.class);
-        
-        // DAG 解析和拓扑排序
         List<WorkflowNode> sortedNodes = dagParser.parse(config);
         
-        // 执行节点
         List<ExecutionResponse.NodeResult> nodeResults = new ArrayList<>();
         Map<String, Map<String, Object>> nodeOutputs = new HashMap<>();
         
-        // 初始输入数据
         Map<String, Object> currentInput = new HashMap<>();
         currentInput.put("input", inputData);
         
@@ -60,9 +54,19 @@ public class WorkflowEngine {
         String errorMessage = null;
         String outputData = null;
         
+        ExecutionRecord record = new ExecutionRecord();
+        
         try {
+            if (eventCallback != null) {
+                eventCallback.accept(ExecutionEvent.workflowStart(null));
+            }
+            
             for (WorkflowNode node : sortedNodes) {
                 long nodeStartTime = System.currentTimeMillis();
+                
+                if (eventCallback != null) {
+                    eventCallback.accept(ExecutionEvent.nodeStart(node.getId(), node.getType()));
+                }
                 
                 ExecutionResponse.NodeResult nodeResult = new ExecutionResponse.NodeResult();
                 nodeResult.setNodeId(node.getId());
@@ -70,18 +74,27 @@ public class WorkflowEngine {
                 nodeResult.setInput(JSON.toJSONString(currentInput));
                 
                 try {
-                    // 获取节点执行器
                     NodeExecutor executor = executorFactory.getExecutor(node.getType());
-                    
-                    // 执行节点
                     Map<String, Object> output = executor.execute(node, currentInput);
                     
-                    // 记录输出
                     nodeOutputs.put(node.getId(), output);
-                    currentInput = output; // 下一个节点的输入
                     
                     nodeResult.setStatus("SUCCESS");
                     nodeResult.setOutput(JSON.toJSONString(output));
+                    
+                    long nodeEndTime = System.currentTimeMillis();
+                    int nodeDuration = (int) (nodeEndTime - nodeStartTime);
+                    nodeResult.setDuration(nodeDuration);
+                    
+                    if (eventCallback != null) {
+                        Map<String, Object> eventData = new HashMap<>();
+                        eventData.put("input", currentInput);
+                        eventData.put("output", output);
+                        eventData.put("duration", nodeDuration);
+                        eventCallback.accept(ExecutionEvent.nodeSuccess(node.getId(), node.getType(), eventData, nodeDuration));
+                    }
+                    
+                    currentInput = output;
                     
                 } catch (Exception e) {
                     log.error("节点执行失败: {}", node.getId(), e);
@@ -89,6 +102,11 @@ public class WorkflowEngine {
                     nodeResult.setError(e.getMessage());
                     status = "FAILED";
                     errorMessage = "节点 " + node.getId() + " 执行失败: " + e.getMessage();
+                    
+                    if (eventCallback != null) {
+                        eventCallback.accept(ExecutionEvent.nodeError(node.getId(), node.getType(), e.getMessage()));
+                    }
+                    
                     throw e;
                 } finally {
                     long nodeEndTime = System.currentTimeMillis();
@@ -97,7 +115,6 @@ public class WorkflowEngine {
                 }
             }
             
-            // 最终输出
             outputData = JSON.toJSONString(currentInput);
             
         } catch (Exception e) {
@@ -110,10 +127,11 @@ public class WorkflowEngine {
         long endTime = System.currentTimeMillis();
         int duration = (int) (endTime - startTime);
         
-        // 保存执行记录
-        ExecutionRecord record = new ExecutionRecord();
+        if (eventCallback != null) {
+            eventCallback.accept(ExecutionEvent.workflowComplete(status, currentInput, duration));
+        }
+        
         record.setFlowId(workflow.getId());
-        // 将 inputData 包装成 JSON 对象
         Map<String, Object> inputDataMap = new HashMap<>();
         inputDataMap.put("input", inputData);
         String inputDataJson = JSON.toJSONString(inputDataMap);
@@ -127,7 +145,6 @@ public class WorkflowEngine {
         record.setDuration(duration);
         executionRecordMapper.insert(record);
         
-        // 构建响应
         ExecutionResponse response = new ExecutionResponse();
         response.setExecutionId(record.getId());
         response.setStatus(status);
