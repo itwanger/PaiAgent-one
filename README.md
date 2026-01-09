@@ -22,9 +22,9 @@
 
 PaiAgent-one 是一个**企业级的 AI 工作流可视化编排平台**，让 AI 能力的组合和调度变得简单高效。通过直观的拖拽式界面，开发者和业务人员都能快速构建复杂的 AI 处理流程，无需编写代码即可实现多种大模型的协同工作。
 
-![工作流编排](https://cdn.tobebetterjavaer.com/paicoding/README-29e9a00fc44f42298da9bd230bb8fe96.png)
+![工作流编排](image/README-29e9a00fc44f42298da9bd230bb8fe96.png)
 
-![SSE实时反馈](https://cdn.tobebetterjavaer.com/paicoding/README-6e538662bb834dbcad888ef065d28bea.png)
+![SSE实时反馈](image/README-6e538662bb834dbcad888ef065d28bea.png)
 
 
 ### 💡 为什么选择 PaiAgent-one？
