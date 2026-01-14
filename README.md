@@ -28,7 +28,7 @@ PaiAgent 是一个**企业级的 AI 工作流可视化编排平台**，让 AI �
 
 ![SSE实时反馈](image/README-6e538662bb834dbcad888ef065d28bea.png)
 
-![架构图](image/jiagoutu.jpg)
+![架构图](image/jiagoutu1.jpg)
 
 ### 💡 为什么选择 PaiAgent？
 
