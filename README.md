@@ -1,6 +1,6 @@
 <div align="center">
 
-# PaiAgent-one
+# PaiAgent
 
 **企业级 AI 工作流可视化编排平台**
 
@@ -9,6 +9,8 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21+-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring AI](https://img.shields.io/badge/Spring%20AI-1.0.0--M5-green.svg)](https://spring.io/projects/spring-ai)
+[![Spring AI Alibaba](https://img.shields.io/badge/Spring%20AI%20Alibaba-1.0.0--M6.1-orange.svg)](https://java2ai.com)
 [![React](https://img.shields.io/badge/React-18.x-61dafb.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 
@@ -20,7 +22,7 @@
 
 ## 📖 项目简介
 
-PaiAgent-one 是一个**企业级的 AI 工作流可视化编排平台**，让 AI 能力的组合和调度变得简单高效。通过直观的拖拽式界面，开发者和业务人员都能快速构建复杂的 AI 处理流程，无需编写代码即可实现多种大模型的协同工作。
+PaiAgent 是一个**企业级的 AI 工作流可视化编排平台**，让 AI 能力的组合和调度变得简单高效。通过直观的拖拽式界面，开发者和业务人员都能快速构建复杂的 AI 处理流程，无需编写代码即可实现多种大模型的协同工作。
 
 ![工作流编排](image/README-29e9a00fc44f42298da9bd230bb8fe96.png)
 
@@ -32,21 +34,26 @@ PaiAgent-one 是一个**企业级的 AI 工作流可视化编排平台**，让 A
 
 - **🎯 零代码编排**：可视化拖拽界面，无需编程即可构建复杂 AI 工作流
 - **🚀 高性能引擎**：自研轻量级 DAG 引擎，支持拓扑排序和智能循环检测
-- **🔌 多模型统一**：统一接入 OpenAI、DeepSeek、通义千问等主流大模型
+- **🔌 多模型统一**：基于 Spring AI 框架，统一接入 OpenAI、DeepSeek、通义千问等主流大模型
 - **🛠️ 灵活扩展**：基于插件化设计，轻松开发自定义节点满足个性化需求
-- **🐛 实时调试**：内置调试面板，可视化执行过程，快速定位问题
+- **🐛 实时调试**：内置调试面板，支持 SSE 流式输出，可视化执行过程
 - **📦 开箱即用**：完整的前后端解决方案，快速部署到生产环境
 
 ## ✨ 核心特性
 
 ### 可视化流程编辑器
+
 基于 ReactFlow 构建的专业流程图编辑器，支持节点拖拽、连线配置、参数编辑等完整功能。
 
 ### 多大模型节点支持
-- **OpenAI 节点**：GPT-3.5/GPT-4 等模型支持
-- **DeepSeek 节点**：国产大模型接入
-- **通义千问节点**：阿里云千问系列模型
-- **更多模型**：持续集成中...
+
+基于 **Spring AI + Spring AI Alibaba** 框架统一接入：
+
+- **OpenAI 节点**：GPT-5 等模型（Spring AI OpenAI 接口）
+- **DeepSeek 节点**：国产大模型（OpenAI 兼容接口）
+- **通义千问节点**：阿里云千问系列（Spring AI Alibaba DashScope 原生支持）
+- **智谱 AI 节点**：GLM 系列模型（OpenAI 兼容接口）
+- **AIPing 节点**：第三方模型代理（OpenAI 兼容接口）
 
 ### 工具节点生态
 - **TTS 音频合成**：超拟人语音生成
@@ -79,7 +86,7 @@ PaiAgent-one 是一个**企业级的 AI 工作流可视化编排平台**，让 A
 │  React 18 + TypeScript + ReactFlow + Ant Design         │
 │  • 可视化编辑器  • 节点面板  • 调试工具                    │
 └────────────────────┬────────────────────────────────────┘
-                     │ REST API / WebSocket
+                     │ REST API / SSE
 ┌────────────────────┴────────────────────────────────────┐
 │                    应用层 (Backend)                       │
 │              Spring Boot 3.4.1 + Java 21                │
@@ -91,6 +98,13 @@ PaiAgent-one 是一个**企业级的 AI 工作流可视化编排平台**，让 A
 │  • WorkflowEngine: 工作流调度引擎                         │
 │  • DAGParser: 拓扑排序 + 循环检测                         │
 │  • NodeExecutor: 节点执行器工厂                           │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────┴────────────────────────────────────┐
+│                  AI 模型层 (Spring AI)                    │
+│  • Spring AI: OpenAI/DeepSeek/智谱 等兼容接口             │
+│  • Spring AI Alibaba: 通义千问 DashScope 原生支持         │
+│  • ChatClientFactory: 统一的 ChatClient 动态工厂          │
 └────────────────────┬────────────────────────────────────┘
                      │
 ┌────────────────────┴────────────────────────────────────┐
@@ -157,6 +171,16 @@ PaiAgent-one 是一个**企业级的 AI 工作流可视化编排平台**，让 A
 <td>增强版 ORM 框架</td>
 </tr>
 <tr>
+<td>Spring AI</td>
+<td>1.0.0-M5</td>
+<td>AI 模型统一调用框架</td>
+</tr>
+<tr>
+<td>Spring AI Alibaba</td>
+<td>1.0.0-M6.1</td>
+<td>通义千问 DashScope 原生支持</td>
+</tr>
+<tr>
 <td>MySQL</td>
 <td>8.0+</td>
 <td>关系型数据库</td>
@@ -172,7 +196,7 @@ PaiAgent-one 是一个**企业级的 AI 工作流可视化编排平台**，让 A
 <td>对象存储服务</td>
 </tr>
 <tr>
-<td rowspan="3"><b>核心引擎</b></td>
+<td rowspan="5"><b>核心引擎</b></td>
 <td>自研 DAG 引擎</td>
 <td>-</td>
 <td>工作流编排核心</td>
@@ -187,6 +211,16 @@ PaiAgent-one 是一个**企业级的 AI 工作流可视化编排平台**，让 A
 <td>-</td>
 <td>防止工作流死锁</td>
 </tr>
+<tr>
+<td>Spring AI ChatClient</td>
+<td>-</td>
+<td>统一 AI 模型调用接口</td>
+</tr>
+<tr>
+<td>ChatClientFactory</td>
+<td>-</td>
+<td>动态创建不同模型客户端</td>
+</tr>
 </table>
 
 ## 📁 项目结构
@@ -199,15 +233,22 @@ PaiAgent-one/
 │   │   │   ├── engine/          # 🎯 DAG 工作流引擎（核心）
 │   │   │   │   ├── WorkflowEngine.java       # 工作流编排引擎
 │   │   │   │   ├── dag/DAGParser.java        # 拓扑排序+循环检测
+│   │   │   │   ├── llm/                     # LLM 调用层（Spring AI）
+│   │   │   │   │   ├── ChatClientFactory.java     # ChatClient 动态工厂
+│   │   │   │   │   ├── PromptTemplateService.java # 提示词模板处理
+│   │   │   │   │   └── LLMNodeConfig.java         # LLM 节点配置
 │   │   │   │   ├── executor/                # 节点执行器
 │   │   │   │   │   ├── NodeExecutor.java    # 执行器接口
 │   │   │   │   │   ├── NodeExecutorFactory.java  # 工厂模式
 │   │   │   │   │   └── impl/               # 具体实现
+│   │   │   │   │       ├── AbstractLLMNodeExecutor.java  # LLM 抽象基类
 │   │   │   │   │       ├── InputNodeExecutor.java
 │   │   │   │   │       ├── OutputNodeExecutor.java
 │   │   │   │   │       ├── OpenAINodeExecutor.java
 │   │   │   │   │       ├── DeepSeekNodeExecutor.java
 │   │   │   │   │       ├── QwenNodeExecutor.java
+│   │   │   │   │       ├── ZhiPuNodeExecutor.java
+│   │   │   │   │       ├── AIPingNodeExecutor.java
 │   │   │   │   │       └── TTSNodeExecutor.java
 │   │   │   │   └── model/                   # 数据模型
 │   │   │   ├── controller/      # REST API 接口层
@@ -372,15 +413,23 @@ npm run dev
 - ✅ 用户认证系统（Token 认证 + 拦截器）
 - ✅ 可视化流程编辑器（ReactFlow 集成）
 - ✅ DAG 工作流引擎（拓扑排序 + 循环检测）
+- ✅ **Spring AI 框架集成**（v1.0.0-M5）
+  - 统一的 ChatClient 调用接口
+  - 支持 OpenAI 兼容协议（OpenAI/DeepSeek/智谱/AIPing）
+- ✅ **Spring AI Alibaba 集成**（v1.0.0-M6.1）
+  - 通义千问 DashScope 原生支持
+  - 阿里云 Qwen 系列模型接入
 - ✅ 多大模型节点支持
   - OpenAI 节点（GPT 系列）
   - DeepSeek 节点
   - 通义千问节点
+  - 智谱 AI 节点
+  - AIPing 节点
 - ✅ 工具节点实现
   - 输入/输出节点
   - TTS 音频合成节点
   - 音频播放器组件
-- ✅ 实时调试功能（调试抽屉 + 日志输出 + 结果展示）
+- ✅ SSE 实时流式输出（调试抽屉 + 日志输出 + 结果展示）
 - ✅ 工作流 CRUD 管理
 - ✅ 执行记录查询
 
@@ -451,12 +500,15 @@ npm run dev
 public interface NodeExecutor {
     Map<String, Object> execute(WorkflowNode node, Map<String, Object> input);
 }
+
+// LLM 节点通过 Spring AI ChatClient 统一调用
+ChatClient chatClient = chatClientFactory.createClient(nodeType, apiUrl, apiKey, model, temperature);
+String response = chatClient.prompt().user(prompt).call().content();
 ```
 
 ### 节点扩展开发
 
-开发自定义节点只需三步：
-
+**方式一：开发普通工具节点**
 1. **实现 NodeExecutor 接口**
 ```java
 public class CustomNodeExecutor implements NodeExecutor {
@@ -473,6 +525,18 @@ public class CustomNodeExecutor implements NodeExecutor {
 NodeExecutorFactory.register("custom", new CustomNodeExecutor());
 ```
 
+**方式二：开发 LLM 节点（推荐）**
+```java
+// 继承 AbstractLLMNodeExecutor，自动获得 Spring AI 能力
+@Component
+public class CustomLLMNodeExecutor extends AbstractLLMNodeExecutor {
+    @Override
+    protected String getNodeType() {
+        return "custom_llm";
+    }
+}
+```
+
 3. **前端添加节点定义**
 ```typescript
 const customNode = {
@@ -481,6 +545,21 @@ const customNode = {
   category: 'tool'
 };
 ```
+
+## 💼 项目亮点（简历版）
+
+**项目名称**：PaiAgent - 企业级 AI 工作流编排平台
+
+**项目描述**：基于可视化流程编辑器的 AI Agent 工作流平台，支持用户通过拖拽方式编排多种大模型（DeepSeek、通义千问等）和工具节点，使用自研 DAG 引擎按拓扑顺序执行工作流，实现复杂 AI 任务的自动化编排与执行。
+
+**技术栈**：Java 21、Spring Boot 3.4.1、Spring AI 1.0.0
+
+**核心职责**：
+
+- 基于 Spring AI 框架重构 LLM 通信层，采用工厂模式+模板方法模式设计 ChatClientFactory 动态工厂和 AbstractLLMNodeExecutor 抽象基类，将 5 个 LLM 节点执行器的重复代码从 800+行精简至 75 行
+- 设计动态 ChatClient 创建机制，支持运行时根据工作流节点配置（apiKey/apiUrl/model）动态实例化不同厂商的 ChatClient，实现多租户场景下每个节点独立配置的能力
+- 抽取 PromptTemplateService 公共服务，统一处理 `{{variable}}` 模板变量替换和上下游节点参数引用映射，支持 input 静态值和 reference 动态引用两种参数类型
+- 基于 Spring AI 的 Flux 响应式流实现 LLM 流式输出，通过 SSE 实时推送生成进度到前端，配合现有 ExecutionEvent 事件机制，用户可实时查看 AI 生成过程
 
 ## 🤝 贡献指南
 
