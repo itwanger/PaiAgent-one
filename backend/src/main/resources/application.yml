@@ -12,6 +12,11 @@ spring:
   jackson:
     time-zone: GMT+8
     date-format: yyyy-MM-dd HH:mm:ss
+  ai:
+    openai:
+      # 占位配置，实际使用时通过节点配置动态指定
+      api-key: ${OPENAI_API_KEY:sk-placeholder}
+      base-url: https://api.openai.com
 
 # MyBatis-Plus 配置
 mybatis-plus:

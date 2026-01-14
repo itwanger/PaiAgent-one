@@ -21,13 +21,16 @@ const NodePanel = ({ onDragStart }: NodePanelProps) => {
     setLoading(true);
     try {
       const result = await getNodeTypes();
+      console.log('Node types API result:', result);
       if (result.code === 200) {
         setNodeTypes(result.data);
       } else {
-        message.error('加载节点类型失败');
+        console.error('Failed to load node types:', result);
+        message.error(`加载节点类型失败: ${result.message || '未知错误'}`);
       }
-    } catch {
-      message.error('加载节点类型失败');
+    } catch (error) {
+      console.error('Error loading node types:', error);
+      message.error(`加载节点类型失败: ${error instanceof Error ? error.message : '网络错误'}`);
     } finally {
       setLoading(false);
     }
