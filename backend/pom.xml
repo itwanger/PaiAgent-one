@@ -31,7 +31,7 @@
 		<mybatis-plus.version>3.5.5</mybatis-plus.version>
 		<springdoc.version>2.3.0</springdoc.version>
 		<spring-ai.version>1.0.0-M5</spring-ai.version>
-		<spring-ai-alibaba.version>1.0.0.2</spring-ai-alibaba.version>
+		<spring-ai-alibaba.version>1.0.0-M6.1</spring-ai-alibaba.version>
 	</properties>
 
 	<dependencyManagement>
@@ -102,11 +102,17 @@
 			<artifactId>minio</artifactId>
 			<version>8.5.7</version>
 		</dependency>
-		<!-- Spring AI OpenAI (支持OpenAI、DeepSeek和通义千问的OpenAI兼容接口) -->
+		<!-- Spring AI OpenAI (支持OpenAI、DeepSeek等OpenAI兼容接口) -->
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-openai-spring-boot-starter</artifactId>
 			<version>${spring-ai.version}</version>
+		</dependency>
+		<!-- Spring AI Alibaba DashScope (用于通义千问原生支持) -->
+		<dependency>
+			<groupId>com.alibaba.cloud.ai</groupId>
+			<artifactId>spring-ai-alibaba-starter</artifactId>
+			<version>${spring-ai-alibaba.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

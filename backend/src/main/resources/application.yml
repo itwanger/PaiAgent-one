@@ -17,6 +17,9 @@ spring:
       # 占位配置，实际使用时通过节点配置动态指定
       api-key: ${OPENAI_API_KEY:sk-placeholder}
       base-url: https://api.openai.com
+    # DashScope配置（用于通义千问原生支持）
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:sk-placeholder}
 
 # MyBatis-Plus 配置
 mybatis-plus:
