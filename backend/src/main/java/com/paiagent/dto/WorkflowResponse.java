@@ -13,6 +13,7 @@ public class WorkflowResponse {
     private String name;
     private String description;
     private String flowData;
+    private String engineType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

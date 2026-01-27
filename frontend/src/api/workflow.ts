@@ -15,6 +15,7 @@ export interface WorkflowData {
   name: string;
   description?: string;
   flowData: string;
+  engineType?: string;
 }
 
 export interface Workflow {
@@ -22,6 +23,7 @@ export interface Workflow {
   name: string;
   description: string;
   flowData: string;
+  engineType?: string;
   createdAt: string;
   updatedAt: string;
 }

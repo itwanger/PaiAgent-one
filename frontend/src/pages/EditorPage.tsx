@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button, Input, Form, message, Checkbox, Select, Space, Modal, List } from 'antd';
+import { Button, Input, Form, message, Checkbox, Select, Modal, List } from 'antd';
 import { SaveOutlined, FolderOpenOutlined, BugOutlined, LogoutOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Node } from '@xyflow/react';
 import NodePanel from '../components/NodePanel';
@@ -51,6 +51,7 @@ const EditorPage = () => {
   const { username, clearAuth } = useAuthStore();
   const { nodes, edges, currentWorkflowId, setCurrentWorkflowId, selectedNode, setNodes, setEdges } = useWorkflowStore();
   const [workflowName, setWorkflowName] = useState('未命名工作流');
+  const [engineType, setEngineType] = useState('dag');
   const [saving, setSaving] = useState(false);
   const [debugDrawerOpen, setDebugDrawerOpen] = useState(false);
   const [outputParams, setOutputParams] = useState<OutputParam[]>([]);
@@ -81,6 +82,9 @@ const EditorPage = () => {
   const [ttsInputParams, setTtsInputParams] = useState<TtsInputParam[]>([]);
   const [ttsOutputParams, setTtsOutputParams] = useState<TtsOutputParam[]>([]);
 
+  // 自动保存定时器
+  const autoSaveTimerRef = useRef<number | null>(null);
+
   // 处理节点拖拽开始
   const handleDragStart = (event: React.DragEvent, nodeType: string, displayName: string) => {
     event.dataTransfer.setData('application/reactflow-type', nodeType);
@@ -91,6 +95,13 @@ const EditorPage = () => {
   // 处理节点点击
   const handleNodeClick = (node: Node) => {
     console.log('Node clicked:', node);
+    
+    // 清理之前的自动保存定时器
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    
     useWorkflowStore.getState().setSelectedNode(node);
     
     // 加载节点配置
@@ -140,6 +151,7 @@ const EditorPage = () => {
       if (result.code === 200) {
         const workflow = result.data;
         setWorkflowName(workflow.name);
+        setEngineType(workflow.engineType || 'dag');
         setCurrentWorkflowId(workflow.id);
         
         const flowData = JSON.parse(workflow.flowData);
@@ -215,6 +227,7 @@ const EditorPage = () => {
         await updateWorkflow(currentWorkflowId, {
           name: workflowName,
           flowData,
+          engineType,
         });
         message.success('工作流保存成功');
       } else {
@@ -223,6 +236,7 @@ const EditorPage = () => {
           name: workflowName,
           description: '通过编辑器创建',
           flowData,
+          engineType,
         });
         if (result.code === 200) {
           const workflowId = result.data.id;
@@ -631,6 +645,132 @@ const EditorPage = () => {
     setLlmOutputParams(newParams);
   };
 
+  // 自动保存输出节点配置
+  useEffect(() => {
+    if (!selectedNode || selectedNode.data?.type !== 'output') return;
+    
+    // 清理之前的定时器
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    
+    // 设置新的定时器（防抖500ms）
+    autoSaveTimerRef.current = setTimeout(() => {
+      // 基础验证
+      let hasValidData = false;
+      
+      // 检查是否有有效的参数配置
+      if (outputParams.length > 0) {
+        hasValidData = outputParams.some(param => param.name && (param.value || param.referenceNode));
+      }
+      
+      // 或者有响应内容
+      if (responseContent && responseContent.trim()) {
+        hasValidData = true;
+      }
+      
+      if (!hasValidData) return; // 没有有效数据，不保存
+      
+      // 保存到节点的 data 中
+      const updatedData = {
+        ...selectedNode.data,
+        outputParams,
+        responseContent
+      };
+      
+      useWorkflowStore.getState().updateNode(selectedNode.id, updatedData);
+      console.log('输出节点配置已自动保存');
+    }, 500);
+    
+    // 清理函数
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [outputParams, responseContent, selectedNode]);
+
+  // 自动保存 LLM 节点配置
+  useEffect(() => {
+    if (!selectedNode) return;
+    const nodeType = selectedNode.data?.type;
+    if (nodeType !== 'openai' && nodeType !== 'deepseek' && nodeType !== 'qwen') return;
+    
+    // 清理之前的定时器
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    
+    // 设置新的定时器（防抖500ms）
+    autoSaveTimerRef.current = setTimeout(() => {
+      // 基础验证：至少有基本配置
+      const hasBasicConfig = llmConfig.apiUrl || llmConfig.apiKey || llmConfig.model || llmConfig.prompt;
+      const hasParams = llmInputParams.length > 0 || llmOutputParams.length > 0;
+      
+      if (!hasBasicConfig && !hasParams) return; // 没有任何配置，不保存
+      
+      const updatedData = {
+        ...selectedNode.data,
+        apiUrl: llmConfig.apiUrl,
+        apiKey: llmConfig.apiKey,
+        model: llmConfig.model,
+        temperature: llmConfig.temperature,
+        prompt: llmConfig.prompt,
+        inputParams: llmInputParams,
+        outputParams: llmOutputParams
+      };
+      
+      useWorkflowStore.getState().updateNode(selectedNode.id, updatedData);
+      console.log('LLM节点配置已自动保存');
+    }, 500);
+    
+    // 清理函数
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [llmConfig, llmInputParams, llmOutputParams, selectedNode]);
+
+  // 自动保存 TTS 节点配置
+  useEffect(() => {
+    if (!selectedNode || selectedNode.data?.type !== 'tts') return;
+    
+    // 清理之前的定时器
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    
+    // 设置新的定时器（防抖500ms）
+    autoSaveTimerRef.current = setTimeout(() => {
+      // 基础验证：至少有基本配置
+      const hasBasicConfig = ttsConfig.apiKey || ttsConfig.model;
+      const hasParams = ttsInputParams.length > 0 || ttsOutputParams.length > 0;
+      
+      if (!hasBasicConfig && !hasParams) return; // 没有任何配置，不保存
+      
+      const updatedData = {
+        ...selectedNode.data,
+        apiKey: ttsConfig.apiKey,
+        model: ttsConfig.model,
+        voice: ttsConfig.voice,
+        languageType: ttsConfig.languageType,
+        inputParams: ttsInputParams,
+        outputParams: ttsOutputParams
+      };
+      
+      useWorkflowStore.getState().updateNode(selectedNode.id, updatedData);
+      console.log('TTS节点配置已自动保存');
+    }, 500);
+    
+    // 清理函数
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [ttsConfig, ttsInputParams, ttsOutputParams, selectedNode]);
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* 顶部工具栏 */}
@@ -644,6 +784,15 @@ const EditorPage = () => {
             placeholder="工作流名称"
             bordered={false}
             style={{ borderBottom: '2px solid #e5e7eb' }}
+          />
+          <Select
+            value={engineType}
+            onChange={(value) => setEngineType(value)}
+            className="w-40"
+            options={[
+              { value: 'dag', label: 'DAG 引擎' },
+              { value: 'langgraph', label: 'LangGraph 引擎' }
+            ]}
           />
         </div>
         

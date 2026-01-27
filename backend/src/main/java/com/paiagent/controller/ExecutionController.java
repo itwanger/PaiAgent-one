@@ -4,7 +4,8 @@ import com.paiagent.common.Result;
 import com.paiagent.dto.ExecutionEvent;
 import com.paiagent.dto.ExecutionRequest;
 import com.paiagent.dto.ExecutionResponse;
-import com.paiagent.engine.WorkflowEngine;
+import com.paiagent.engine.EngineSelector;
+import com.paiagent.engine.WorkflowExecutor;
 import com.paiagent.entity.Workflow;
 import com.paiagent.service.WorkflowService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +32,7 @@ public class ExecutionController {
     private WorkflowService workflowService;
     
     @Autowired
-    private WorkflowEngine workflowEngine;
+    private EngineSelector engineSelector;
     
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     
@@ -44,7 +45,9 @@ public class ExecutionController {
         }
         
         try {
-            ExecutionResponse response = workflowEngine.execute(workflow, request.getInputData());
+            // 使用引擎选择器选择合适的执行引擎
+            WorkflowExecutor executor = engineSelector.selectEngine(workflow);
+            ExecutionResponse response = executor.execute(workflow, request.getInputData());
             return Result.success(response);
         } catch (Exception e) {
             return Result.error("工作流执行失败: " + e.getMessage());
@@ -84,7 +87,9 @@ public class ExecutionController {
                     return;
                 }
                 
-                workflowEngine.executeWithCallback(workflow, inputData, eventCallback);
+                // 使用引擎选择器选择合适的执行引擎
+                WorkflowExecutor executor = engineSelector.selectEngine(workflow);
+                executor.executeWithCallback(workflow, inputData, eventCallback);
                 emitter.complete();
             } catch (Exception e) {
                 log.error("工作流执行失败", e);

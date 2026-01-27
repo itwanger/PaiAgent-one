@@ -26,6 +26,7 @@ public class WorkflowService extends ServiceImpl<WorkflowMapper, Workflow> {
         workflow.setName(request.getName());
         workflow.setDescription(request.getDescription());
         workflow.setFlowData(request.getFlowData());
+        workflow.setEngineType(request.getEngineType());
         
         this.save(workflow);
         
@@ -44,6 +45,7 @@ public class WorkflowService extends ServiceImpl<WorkflowMapper, Workflow> {
         workflow.setName(request.getName());
         workflow.setDescription(request.getDescription());
         workflow.setFlowData(request.getFlowData());
+        workflow.setEngineType(request.getEngineType());
         
         this.updateById(workflow);
         

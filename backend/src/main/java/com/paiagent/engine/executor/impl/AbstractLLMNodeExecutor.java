@@ -67,39 +67,84 @@ public abstract class AbstractLLMNodeExecutor implements NodeExecutor {
         );
         
         // 4. 调用LLM（支持流式和非流式）
-        String response;
+        LLMResponse llmResponse;
         if (config.isStreaming() && progressCallback != null) {
-            response = executeStreaming(chatClient, finalPrompt, node, progressCallback);
+            llmResponse = executeStreaming(chatClient, finalPrompt, node, progressCallback);
         } else {
-            response = executeNormal(chatClient, finalPrompt);
+            llmResponse = executeNormal(chatClient, finalPrompt);
         }
         
-        log.info("{} API响应: {}", getNodeType().toUpperCase(), response);
+        log.info("{} API响应: {}", getNodeType().toUpperCase(), llmResponse.getContent());
+        log.info("{} Token统计: 输入={}, 输出={}, 总计={}", 
+                getNodeType().toUpperCase(), 
+                llmResponse.getInputTokens(),
+                llmResponse.getOutputTokens(),
+                llmResponse.getTotalTokens());
         
         // 5. 构建输出
-        Map<String, Object> output = buildOutput(response, config.getOutputParams());
+        Map<String, Object> output = buildOutput(llmResponse, config.getOutputParams());
         log.info("{} 节点输出: {}", getNodeType().toUpperCase(), output);
         
         return output;
     }
     
     /**
+     * LLM响应包装类
+     */
+    private static class LLMResponse {
+        private final String content;
+        private final Integer inputTokens;
+        private final Integer outputTokens;
+        private final Integer totalTokens;
+        
+        public LLMResponse(String content, Integer inputTokens, Integer outputTokens, Integer totalTokens) {
+            this.content = content;
+            this.inputTokens = inputTokens != null ? inputTokens : 0;
+            this.outputTokens = outputTokens != null ? outputTokens : 0;
+            this.totalTokens = totalTokens != null ? totalTokens : (this.inputTokens + this.outputTokens);
+        }
+        
+        public String getContent() { return content; }
+        public Integer getInputTokens() { return inputTokens; }
+        public Integer getOutputTokens() { return outputTokens; }
+        public Integer getTotalTokens() { return totalTokens; }
+    }
+    
+    /**
      * 普通（非流式）调用
      */
-    private String executeNormal(ChatClient chatClient, String prompt) {
-        return chatClient.prompt()
+    private LLMResponse executeNormal(ChatClient chatClient, String prompt) {
+        var chatResponse = chatClient.prompt()
                 .user(prompt)
                 .call()
-                .content();
+                .chatResponse();
+        
+        String content = chatResponse.getResult().getOutput().getContent();
+        
+        // 提取token统计
+        var metadata = chatResponse.getMetadata();
+        Integer inputTokens = null;
+        Integer outputTokens = null;
+        Integer totalTokens = null;
+        
+        if (metadata != null && metadata.getUsage() != null) {
+            var usage = metadata.getUsage();
+            inputTokens = usage.getPromptTokens() != null ? usage.getPromptTokens().intValue() : null;
+            outputTokens = usage.getGenerationTokens() != null ? usage.getGenerationTokens().intValue() : null;
+            totalTokens = usage.getTotalTokens() != null ? usage.getTotalTokens().intValue() : null;
+        }
+        
+        return new LLMResponse(content, inputTokens, outputTokens, totalTokens);
     }
     
     /**
      * 流式调用
      */
-    private String executeStreaming(ChatClient chatClient, String prompt, 
+    private LLMResponse executeStreaming(ChatClient chatClient, String prompt, 
                                     WorkflowNode node, Consumer<ExecutionEvent> progressCallback) {
         StringBuilder accumulated = new StringBuilder();
         
+        // 注意：流式调用时无法获取token统计，因为metadata在流式模式下不可用
         chatClient.prompt()
                 .user(prompt)
                 .stream()
@@ -118,7 +163,8 @@ public abstract class AbstractLLMNodeExecutor implements NodeExecutor {
                 })
                 .blockLast();
         
-        return accumulated.toString();
+        // 流式调用无token统计
+        return new LLMResponse(accumulated.toString(), null, null, null);
     }
     
     /**
@@ -147,20 +193,25 @@ public abstract class AbstractLLMNodeExecutor implements NodeExecutor {
      * 构建输出结果
      */
     @SuppressWarnings("unchecked")
-    protected Map<String, Object> buildOutput(String response, List<Map<String, Object>> outputParams) {
+    protected Map<String, Object> buildOutput(LLMResponse llmResponse, List<Map<String, Object>> outputParams) {
         Map<String, Object> output = new HashMap<>();
+        
+        String content = llmResponse.getContent();
         
         if (outputParams != null && !outputParams.isEmpty()) {
             for (Map<String, Object> param : outputParams) {
                 String paramName = (String) param.get("name");
-                output.put(paramName, response);
+                output.put(paramName, content);
             }
         } else {
-            output.put("output", response);
+            output.put("output", content);
         }
         
-        // 添加token统计（占位，后续可从ChatResponse的metadata中获取实际值）
-        output.put("tokens", 0);
+        // 添加token统计
+        output.put("inputTokens", llmResponse.getInputTokens());
+        output.put("outputTokens", llmResponse.getOutputTokens());
+        output.put("totalTokens", llmResponse.getTotalTokens());
+        output.put("tokens", llmResponse.getTotalTokens()); // 保持向后兼容
         
         return output;
     }

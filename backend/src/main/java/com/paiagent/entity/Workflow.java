@@ -33,6 +33,11 @@ public class Workflow {
     private String flowData;
     
     /**
+     * 工作流引擎类型: dag(默认), langgraph
+     */
+    private String engineType;
+    
+    /**
      * 创建时间
      */
     @TableField(fill = FieldFill.INSERT)

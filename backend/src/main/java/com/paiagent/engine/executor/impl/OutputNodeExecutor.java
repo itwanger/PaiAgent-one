@@ -59,11 +59,28 @@ public class OutputNodeExecutor implements NodeExecutor {
                     
                     if (reference != null && reference.contains(".")) {
                         String[] parts = reference.split("\\.");
-                        // 取最后一部分作为参数名，例如 "input-default.user_input" -> "user_input"
-                        String refParamName = parts[parts.length - 1];
+                        String refNodeId = parts[0]; // 节点ID，例如 "qwen-1"
+                        String refParamName = parts[parts.length - 1]; // 参数名，例如 "response"
                         
-                        // 尝试从 input 中获取值
-                        Object refValue = input.get(refParamName);
+                        Object refValue = null;
+                        
+                        // 优先从 input 的上层 nodeOutputs 中查找（LangGraph 场景）
+                        if (input.containsKey("__nodeOutputs__")) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Map<String, Object>> nodeOutputs = 
+                                (Map<String, Map<String, Object>>) input.get("__nodeOutputs__");
+                            
+                            if (nodeOutputs != null && nodeOutputs.containsKey(refNodeId)) {
+                                Map<String, Object> nodeOutput = nodeOutputs.get(refNodeId);
+                                refValue = nodeOutput.get(refParamName);
+                                log.info("从 nodeOutputs 中找到引用 {}.{} 的值: {}", refNodeId, refParamName, refValue);
+                            }
+                        }
+                        
+                        // 如果找不到，尝试从 input 中获取值（DAG 引擎场景）
+                        if (refValue == null) {
+                            refValue = input.get(refParamName);
+                        }
                         
                         // 如果找不到，尝试使用 "input" 作为 fallback（因为输入节点输出的是 input）
                         if (refValue == null && "user_input".equals(refParamName)) {

@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 @Slf4j
 @Service
-public class WorkflowEngine {
+public class WorkflowEngine implements WorkflowExecutor {
     
     @Autowired
     private DAGParser dagParser;
@@ -34,10 +34,12 @@ public class WorkflowEngine {
     @Autowired
     private ExecutionRecordMapper executionRecordMapper;
     
+    @Override
     public ExecutionResponse execute(Workflow workflow, String inputData) {
         return executeWithCallback(workflow, inputData, null);
     }
     
+    @Override
     public ExecutionResponse executeWithCallback(Workflow workflow, String inputData, Consumer<ExecutionEvent> eventCallback) {
         long startTime = System.currentTimeMillis();
         
@@ -153,5 +155,10 @@ public class WorkflowEngine {
         response.setDuration(duration);
         
         return response;
+    }
+    
+    @Override
+    public String getEngineType() {
+        return "dag";
     }
 }

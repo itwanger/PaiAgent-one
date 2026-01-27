@@ -16,4 +16,6 @@ public class WorkflowRequest {
     
     @NotBlank(message = "工作流配置数据不能为空")
     private String flowData;
+    
+    private String engineType;
 }
